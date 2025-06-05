@@ -113,7 +113,26 @@ wss.on('connection', async (ws) => {
         if (isGreeting) {
           response = 'Hello! Nice to meet you. How can I assist you today?\n';
         } else if (isQuestion || tokens.some(token => tableNames.includes(token))) {
-          response = 'I see you might be asking about data! Use "sql <query>" for now, or soon just say a table name like "properties" to query it.\n';
+            const tableMatch = tokens.find(token => tableNames.includes(token));
+            if (tableMatch) {
+                // Simple query for the matched table
+                ws.send('AI is typing...\n');
+                setTimeout(async () => {
+                try {
+                    const { data, error } = await supabase.from(tableMatch).select('*');
+                    if (error) {
+                    ws.send(`Error querying ${tableMatch}: ${error.message}\n`);
+                    } else {
+                    const formattedResults = formatQueryResults(data);
+                    ws.send(`Here are the ${tableMatch}:\n${formattedResults}\n`);
+                    }
+                } catch (err) {
+                    ws.send(`Unexpected error: ${err.message}\n`);
+                }
+                }, 1500);
+                return; // Exit early to avoid the default response
+            }  
+            response = 'I see you might be asking about data! Use "sql <query>" for now, or soon just say a table name like "properties" to query it.\n';
         } else {
           response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi", "sql <query>" (for testing), or type "exit" to quit.\n`;
         }
