@@ -54,17 +54,16 @@ SUPABASE_KEY=your-supabase-anon-key
   LANGUAGE plpgsql
   SECURITY DEFINER
   AS $$
+  DECLARE
+      result json;
   BEGIN
-    RETURN (
-      SELECT json_agg(t)
-      FROM (
-        EXECUTE query_text
-      ) AS t
-    )::json;
+      EXECUTE format('SELECT json_agg(t) FROM (%s) t', query_text) INTO result;
+      RETURN result;
   EXCEPTION WHEN OTHERS THEN
-    RAISE EXCEPTION 'Error executing query: %', SQLERRM;
+      RAISE EXCEPTION 'Error executing query: %', SQLERRM;
   END;
   $$;
+
   GRANT EXECUTE ON FUNCTION query(text) TO anon;
   ```
 
