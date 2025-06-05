@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.49.10",
     "compromise": "^14.14.4",
     "express": "^5.1.0",
+    "natural": "^8.1.0",
     "ws": "^8.18.2"
   }
 }

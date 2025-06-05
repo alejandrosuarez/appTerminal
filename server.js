@@ -1,7 +1,8 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const nlp = require('compromise');
+const nlp = require('compromise'); // Keep for now, can remove later
+const natural = require('natural');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -21,9 +22,16 @@ app.get('/', (req, res) => {
 // Function to format JSON results into a readable string
 function formatQueryResults(data) {
   if (!data || data.length === 0) return 'No results found.';
-  if (!Array.isArray(data)) return 'Invalid data format.';
+  if (!Array.isArray(data)) {
+    // Handle single object
+    let output = 'Query Result:\n';
+    for (const [key, value] of Object.entries(data)) {
+      output += `  ${key}: ${value}\n`;
+    }
+    return output;
+  }
 
-  // Assuming data is an array of objects (e.g., properties)
+  // Handle array of objects (e.g., table rows)
   let output = 'Query Results:\n';
   data.forEach((item, index) => {
     output += `Record ${index + 1}:\n`;
@@ -35,10 +43,25 @@ function formatQueryResults(data) {
   return output;
 }
 
+// Function to get table names (for future query assistance)
+async function getTableNames() {
+  try {
+    const { data, error } = await supabase.rpc('query', { query_text: "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'" });
+    if (error) throw error;
+    return data.map(row => row.table_name);
+  } catch (err) {
+    console.error('Error fetching table names:', err);
+    return [];
+  }
+}
+
 // WebSocket connection handling
-wss.on('connection', (ws) => {
+wss.on('connection', async (ws) => {
   console.log('Client connected');
   ws.send('Welcome to the terminal simulator! Type "exit" to quit.\nYou can also use "sql <query>" to run SQL commands (for testing).\n');
+
+  // Preload table names for query assistance
+  const tableNames = await getTableNames();
 
   ws.on('message', async (message) => {
     const input = message.toString().trim();
@@ -47,7 +70,7 @@ wss.on('connection', (ws) => {
       ws.close();
     } else if (input.toLowerCase().startsWith('sql ')) {
       // Handle SQL command
-      const query = input.substring(4).trim(); // Extract the SQL query after "sql "
+      const query = input.substring(4).trim();
       if (!query) {
         ws.send('Please provide a valid SQL query after "sql".\n');
         return;
@@ -56,32 +79,41 @@ wss.on('connection', (ws) => {
       ws.send('AI is typing...\n');
       setTimeout(async () => {
         try {
-          // Execute the raw SQL query using Supabase's custom function
           const { data, error } = await supabase.rpc('query', { query_text: query });
           if (error) {
             ws.send(`Error executing SQL query: ${error.message}\n`);
           } else {
-            // Format the results for better display
             const formattedResults = formatQueryResults(data);
-            ws.send(formattedResults + '\n');
+            // Use natural to analyze intent or structure (basic for now)
+            const tokenizer = new natural.WordTokenizer();
+            const tokens = tokenizer.tokenize(input);
+            const hasTable = tableNames.some(table => tokens.includes(table.toLowerCase()));
+
+            let response = formattedResults;
+            if (hasTable) {
+              response += '\nAI detected a table name. Next time, just say the table (e.g., "properties") to query it!\n';
+            }
+            ws.send(response + '\n');
           }
         } catch (err) {
           ws.send(`Unexpected error: ${err.message}\n`);
         }
       }, 1500); // 1.5-second delay to simulate typing
     } else {
-      // Handle conversational AI with compromise
+      // Handle conversational AI with compromise and natural
       ws.send('AI is typing...\n');
       setTimeout(() => {
         const doc = nlp(input);
         const isGreeting = doc.has('hi') || doc.has('hello') || doc.has('hey');
         const isQuestion = doc.questions().found;
+        const tokenizer = new natural.WordTokenizer();
+        const tokens = tokenizer.tokenize(input.toLowerCase());
 
         let response = '';
         if (isGreeting) {
           response = 'Hello! Nice to meet you. How can I assist you today?\n';
-        } else if (isQuestion) {
-          response = 'Interesting question! I’m a simple AI, so I can only respond to basic greetings or commands for now. Try "hi", "sql <query>" (for testing), or "exit".\n';
+        } else if (isQuestion || tokens.some(token => tableNames.includes(token))) {
+          response = 'I see you might be asking about data! Use "sql <query>" for now, or soon just say a table name like "properties" to query it.\n';
         } else {
           response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi", "sql <query>" (for testing), or type "exit" to quit.\n`;
         }
