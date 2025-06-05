@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Terminal Simulator</title>
+  <style>
+    #output { white-space: pre-wrap; }
+    .typing { color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Terminal Simulator</h1>
+  <pre id="output"></pre>
+  <input type="text" id="input" placeholder="Type a command and press Enter">
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const ws = new WebSocket('wss://appterminal.onrender.com');
+    const output = document.getElementById('output');
+    const input = document.getElementById('input');
+    let isTyping = false;
+
+    ws.onopen = () => {
+      output.textContent += 'Connected to terminal simulator.\n';
+    };
+
+    ws.onmessage = (event) => {
+      const message = event.data;
+      if (message.includes('AI is typing...')) {
+        if (!isTyping) {
+          isTyping = true;
+          output.textContent += '\n' + message;
+          output.scrollTop = output.scrollHeight;
+        }
+      } else {
+        isTyping = false;
+        // Replace the last "typing" line with the response
+        const lines = output.textContent.split('\n');
+        if (lines.length > 1 && lines[lines.length - 2].includes('AI is typing...')) {
+          lines[lines.length - 2] = message;
+          output.textContent = lines.join('\n');
+        } else {
+          output.textContent += '\n' + message;
+        }
+        output.scrollTop = output.scrollHeight;
+      }
+    };
+
+    ws.onclose = () => {
+      output.textContent += '\nDisconnected from terminal simulator.\n';
+    };
+
+    ws.onerror = (error) => {
+      output.textContent += '\nError: ' + error + '\n';
+    };
+
+    function sendMessage() {
+      const message = input.value;
+      if (message) {
+        ws.send(message);
+        input.value = '';
+      }
+    }
+
+    input.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

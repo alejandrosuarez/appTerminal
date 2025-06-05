@@ -9,7 +9,8 @@ const wss = new WebSocket.Server({ server });
 
 // Serve a simple HTML page for testing (optional)
 app.get('/', (req, res) => {
-  res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
+  // res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
+  res.sendFile(__dirname + '/index.html');
 });
 
 // WebSocket connection handling
@@ -23,20 +24,25 @@ wss.on('connection', (ws) => {
       ws.send('Session ended. Goodbye!\n');
       ws.close();
     } else {
-      // Process input with compromise for basic conversation
-      const doc = nlp(input);
-      const isGreeting = doc.has('hi') || doc.has('hello') || doc.has('hey');
-      const isQuestion = doc.questions().found;
+      // Send typing indicator
+      ws.send('AI is typing...\n');
 
-      let response = '';
-      if (isGreeting) {
-        response = 'Hello! Nice to meet you. How can I assist you today?\n';
-      } else if (isQuestion) {
-        response = 'Interesting question! I’m a simple AI, so I can only respond to basic greetings or commands for now. Try "hi" or "exit".\n';
-      } else {
-        response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi" or type "exit" to quit.\n`;
-      }
-      ws.send(response);
+      // Simulate processing delay and generate response
+      setTimeout(() => {
+        const doc = nlp(input);
+        const isGreeting = doc.has('hi') || doc.has('hello') || doc.has('hey');
+        const isQuestion = doc.questions().found;
+
+        let response = '';
+        if (isGreeting) {
+          response = 'Hello! Nice to meet you. How can I assist you today?\n';
+        } else if (isQuestion) {
+          response = 'Interesting question! I’m a simple AI, so I can only respond to basic greetings or commands for now. Try "hi" or "exit".\n';
+        } else {
+          response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi" or type "exit" to quit.\n`;
+        }
+        ws.send(response);
+      }, 1500); // 1.5-second delay to simulate typing
     }
   });
 
