@@ -1,9 +1,11 @@
-const net = require('net');
+const express = require('express');
+const app = express();
 
-const server = net.createServer((socket) => {
-  socket.write('Welcome to the app!\n');
+app.get('/', (req, res) => {
+  res.send('Welcome to the app!\n');
 });
 
-server.listen(5000, () => {
-  console.log('Server listening on port 5000');
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
