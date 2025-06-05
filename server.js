@@ -18,10 +18,27 @@ app.get('/', (req, res) => {
   res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
 });
 
+// Function to format JSON results into a readable string
+function formatQueryResults(data) {
+  if (!data || data.length === 0) return 'No results found.';
+  if (!Array.isArray(data)) return 'Invalid data format.';
+
+  // Assuming data is an array of objects (e.g., properties)
+  let output = 'Query Results:\n';
+  data.forEach((item, index) => {
+    output += `Record ${index + 1}:\n`;
+    for (const [key, value] of Object.entries(item)) {
+      output += `  ${key}: ${value}\n`;
+    }
+    output += '---\n';
+  });
+  return output;
+}
+
 // WebSocket connection handling
 wss.on('connection', (ws) => {
   console.log('Client connected');
-  ws.send('Welcome to the terminal simulator! Type "exit" to quit.\nYou can also use "sql <query>" to run SQL commands.\n');
+  ws.send('Welcome to the terminal simulator! Type "exit" to quit.\nYou can also use "sql <query>" to run SQL commands (for testing).\n');
 
   ws.on('message', async (message) => {
     const input = message.toString().trim();
@@ -39,18 +56,14 @@ wss.on('connection', (ws) => {
       ws.send('AI is typing...\n');
       setTimeout(async () => {
         try {
-          // Execute the raw SQL query using Supabase's postgres.sql method
+          // Execute the raw SQL query using Supabase's custom function
           const { data, error } = await supabase.rpc('query', { query_text: query });
           if (error) {
             ws.send(`Error executing SQL query: ${error.message}\n`);
           } else {
-            // Format and send the query results
-            if (data && data.length > 0) {
-              const formattedResults = JSON.stringify(data, null, 2);
-              ws.send(`Query results:\n${formattedResults}\n`);
-            } else {
-              ws.send('No results found for the query.\n');
-            }
+            // Format the results for better display
+            const formattedResults = formatQueryResults(data);
+            ws.send(formattedResults + '\n');
           }
         } catch (err) {
           ws.send(`Unexpected error: ${err.message}\n`);
@@ -68,9 +81,9 @@ wss.on('connection', (ws) => {
         if (isGreeting) {
           response = 'Hello! Nice to meet you. How can I assist you today?\n';
         } else if (isQuestion) {
-          response = 'Interesting question! I’m a simple AI, so I can only respond to basic greetings or commands for now. Try "hi", "sql <query>", or "exit".\n';
+          response = 'Interesting question! I’m a simple AI, so I can only respond to basic greetings or commands for now. Try "hi", "sql <query>" (for testing), or "exit".\n';
         } else {
-          response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi", "sql <query>", or type "exit" to quit.\n`;
+          response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi", "sql <query>" (for testing), or type "exit" to quit.\n`;
         }
         ws.send(response);
       }, 1500); // 1.5-second delay to simulate typing
