@@ -6,68 +6,173 @@
   <title>Terminal Chat Simulator</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Particles.js CDN for background effect -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      font-family: 'Orbitron', sans-serif; /* Futuristic font */
+      overflow-x: hidden;
+      transition: all 0.3s ease;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 15px;
+    }
     #output {
-      white-space: pre-wrap;
-      min-height: 200px;
-      max-height: 400px;
+      min-height: 300px;
+      max-height: 500px;
       overflow-y: auto;
-      background-color: #1a1a1a;
-      color: #e0e0e0;
-      padding: 1rem;
-      border-radius: 0.5rem;
+      padding: 1.5rem;
+      background: rgba(26, 32, 44, 0.8);
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 0.5s ease-out;
     }
     .typing {
-      color: #888;
       animation: blink 1s step-end infinite;
+      color: #00ffcc;
     }
-    @keyframes blink {
-      50% { opacity: 0; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     #input {
-      background-color: #2d2d2d;
-      color: #e0e0e0;
-      border: 1px solid #444;
+      background: rgba(45, 55, 72, 0.8);
+      border: none;
+      border-bottom: 2px solid #00ffcc;
+      padding: 1rem;
+      transition: all 0.3s ease;
     }
     #input:focus {
+      border-bottom-color: #ff00ff;
+      box-shadow: 0 0 10px #ff00ff;
       outline: none;
-      border-color: #66b0ff;
-      box-shadow: 0 0 5px #66b0ff;
+    }
+    button {
+      background: linear-gradient(45deg, #00ffcc, #ff00ff);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 25px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+    }
+    .sidebar {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+    .particle {
+      position: fixed;
+      width: 5px;
+      height: 5px;
+      background: rgba(0, 255, 204, 0.6);
+      border-radius: 50%;
+      animation: float 5s infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.2); }
+      100% { transform: translateY(0) scale(1); }
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
-  <div class="container mx-auto p-6 max-w-2xl">
-    <!-- Header with Branding -->
-    <header class="mb-6 text-center">
-      <h1 class="text-3xl font-bold text-teal-400">Terminal Chat Simulator</h1>
-      <p class="text-sm text-gray-400 mt-2">Powered by <span class="text-teal-300">Supabase</span> & <span class="text-teal-300">xAI</span></p>
-      <p class="text-gray-500 mt-1">Welcome to our community! You're part of something amazing—let's build the future together! 🚀</p>
-    </header>
-
-    <!-- Terminal Area -->
-    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-      <div id="output" class="mb-4"></div>
-      <div class="flex">
-        <input type="text" id="input" placeholder="Type a command and press Enter" class="flex-1 p-2 rounded-l-lg text-white">
-        <button onclick="sendMessage()" class="bg-teal-500 text-white p-2 rounded-r-lg hover:bg-teal-600 transition">Send</button>
-      </div>
+<body class="relative">
+  <!-- Particle Background -->
+  <canvas id="particles-js"></canvas>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 p-4 overflow-y-auto">
+      <h2 class="text-xl font-bold text-teal-300 mb-4">Settings</h2>
+      <button id="theme-toggle" class="w-full text-left p-2 mb-2 glass hover:bg-teal-900 transition">
+        Toggle Theme (System Default)
+      </button>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-6 text-center text-gray-500 text-sm">
-      <p>© 2025 Terminal Chat Simulator Community. Proudly open-source.</p>
-    </footer>
+    <!-- Main Content -->
+    <div class="flex-1 p-6 flex flex-col justify-center">
+      <header class="mb-6 text-center">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-pink-500">
+          Terminal Chat Simulator
+        </h1>
+        <p class="text-lg text-gray-400 mt-2">Powered by <span class="text-teal-300">Supabase</span> & <span class="text-pink-300">xAI</span></p>
+        <p class="mt-1 text-gray-500">Welcome to our cosmic community! You're shaping the future—join the journey! 🌌</p>
+      </header>
+
+      <div class="glass p-6">
+        <div id="output" class="mb-6"></div>
+        <div class="flex">
+          <input type="text" id="input" placeholder="Enter a command..." class="flex-1 p-2 rounded-l-full text-white focus:rounded-r-none">
+          <button onclick="sendMessage()" class="rounded-r-full">Send</button>
+        </div>
+      </div>
+
+      <footer class="mt-6 text-center text-gray-500">
+        <p>© 2025 Terminal Chat Simulator. Open-source with pride.</p>
+      </footer>
+    </div>
   </div>
 
   <script>
+    // Particles.js Initialization
+    particlesJS({
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: "#00ffcc" },
+        shape: { type: "circle" },
+        opacity: { value: 0.5, random: true },
+        size: { value: 3, random: true },
+        move: { enable: true, speed: 2, direction: "none", random: true },
+      },
+      interactivity: {
+        detectsOn: "canvas",
+        modes: { repulse: { distance: 100 } },
+      },
+    });
+
+    // Theme Detection and Toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function setTheme(theme) {
+      document.body.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('theme', theme);
+      themeToggle.textContent = `Toggle Theme (${theme === 'dark' ? 'Light' : 'Dark'})`;
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      setTheme(prefersDarkScheme.matches ? 'dark' : 'light');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = localStorage.getItem('theme') || (prefersDarkScheme.matches ? 'dark' : 'light');
+      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // WebSocket Logic
     const ws = new WebSocket('wss://appterminal.onrender.com');
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     let isTyping = false;
 
     ws.onopen = () => {
-      output.textContent += 'Connected to Terminal Chat Simulator at 06:58 PM -05, Thursday, June 05, 2025.\n';
+      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:13 PM -05, Thursday, June 05, 2025.</div>\n';
     };
 
     ws.onmessage = (event) => {
@@ -80,7 +185,6 @@
         }
       } else {
         isTyping = false;
-        // Replace the last "typing" line with the response
         const lines = output.innerHTML.split('<div>').filter(line => line.trim());
         if (lines.length > 1 && lines[lines.length - 2].includes('AI is typing...')) {
           lines[lines.length - 2] = message;
@@ -113,6 +217,17 @@
         sendMessage();
       }
     });
+
+    // Dynamic Particles
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + 'vw';
+      particle.style.animationDuration = Math.random() * 5 + 3 + 's';
+      document.body.appendChild(particle);
+      setTimeout(() => particle.remove(), 8000);
+    }
+    setInterval(createParticle, 500);
   </script>
 </body>
 </html>
