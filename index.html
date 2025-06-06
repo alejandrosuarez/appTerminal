@@ -6,8 +6,8 @@
   <title>Terminal Chat Simulator</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Particles.js CDN for subtle cyberpunk background -->
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <!-- Particles.js CDN with fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" onload="initParticles()" onerror="console.error('Particles.js failed to load, falling back to plain background');"></script>
   <style>
     body {
       background: #0a0e14; /* Dark cyberpunk background */
@@ -105,33 +105,37 @@
   </div>
 
   <script>
-    // Particles.js for subtle cyberpunk particles
-    particlesJS({
-      particles: {
-        number: { value: 50, density: { enable: true, value_area: 800 } },
-        color: { value: "#00ffcc" },
-        shape: { type: "circle" },
-        opacity: { value: 0.3, random: true },
-        size: { value: 2, random: true },
-        move: { enable: true, speed: 1, direction: "none", random: true },
-      },
-      interactivity: {
-        detectsOn: "canvas",
-        modes: { repulse: { distance: 50 } },
-      },
-    });
+    // Particles.js Initialization with fallback
+    function initParticles() {
+      particlesJS({
+        particles: {
+          number: { value: 50, density: { enable: true, value_area: 800 } },
+          color: { value: "#00ffcc" },
+          shape: { type: "circle" },
+          opacity: { value: 0.3, random: true },
+          size: { value: 2, random: true },
+          move: { enable: true, speed: 1, direction: "none", random: true },
+        },
+        interactivity: {
+          detectsOn: "canvas",
+          modes: { repulse: { distance: 50 } },
+        },
+      });
+    }
 
-    // WebSocket Logic
+    // WebSocket Logic with Error Handling
     const ws = new WebSocket('wss://appterminal.onrender.com');
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     let isTyping = false;
 
     ws.onopen = () => {
-      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:20 PM -05, Thursday, June 05, 2025.</div>\n';
+      console.log('WebSocket connection opened');
+      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:25 PM -05, Thursday, June 05, 2025.</div>\n';
     };
 
     ws.onmessage = (event) => {
+      console.log('Message received:', event.data);
       const message = event.data;
       if (message.includes('AI is typing...')) {
         if (!isTyping) {
@@ -153,11 +157,13 @@
     };
 
     ws.onclose = () => {
+      console.log('WebSocket connection closed');
       output.innerHTML += '<div>Disconnected from Terminal Chat Simulator.</div>\n';
     };
 
     ws.onerror = (error) => {
-      output.innerHTML += '<div>Error: ' + error + '</div>\n';
+      console.error('WebSocket error:', error);
+      output.innerHTML += '<div>Error: WebSocket connection failed. Check console for details.</div>\n';
     };
 
     function sendMessage() {
