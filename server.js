@@ -1,3 +1,4 @@
+const { handleChat, removeClient } = require('./chat');
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -66,6 +67,9 @@ wss.on('connection', async (ws) => {
 
   ws.on('message', async (message) => {
     const input = message.toString().trim();
+    // Handle guest chat system
+    const wasHandledByChat = handleChat(ws, message);
+    if (wasHandledByChat) return;
     if (input.toLowerCase() === 'exit') {
       ws.send('Session ended. Goodbye!\n');
       ws.close();
@@ -144,6 +148,7 @@ wss.on('connection', async (ws) => {
 
   ws.on('close', () => {
     console.log('Client disconnected');
+    removeClient(ws);
   });
 
   ws.on('error', (error) => {
