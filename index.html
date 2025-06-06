@@ -1,17 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Terminal Simulator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Chat Simulator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    #output { white-space: pre-wrap; }
-    .typing { color: #888; }
+    #output {
+      white-space: pre-wrap;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .typing {
+      color: #888;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    #input {
+      background-color: #2d2d2d;
+      color: #e0e0e0;
+      border: 1px solid #444;
+    }
+    #input:focus {
+      outline: none;
+      border-color: #66b0ff;
+      box-shadow: 0 0 5px #66b0ff;
+    }
   </style>
 </head>
-<body>
-  <h1>Terminal Simulator</h1>
-  <pre id="output"></pre>
-  <input type="text" id="input" placeholder="Type a command and press Enter">
-  <button onclick="sendMessage()">Send</button>
+<body class="bg-gray-900 text-white font-sans">
+  <div class="container mx-auto p-6 max-w-2xl">
+    <!-- Header with Branding -->
+    <header class="mb-6 text-center">
+      <h1 class="text-3xl font-bold text-teal-400">Terminal Chat Simulator</h1>
+      <p class="text-sm text-gray-400 mt-2">Powered by <span class="text-teal-300">Supabase</span> & <span class="text-teal-300">xAI</span></p>
+      <p class="text-gray-500 mt-1">Welcome to our community! You're part of something amazing—let's build the future together! 🚀</p>
+    </header>
+
+    <!-- Terminal Area -->
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+      <div id="output" class="mb-4"></div>
+      <div class="flex">
+        <input type="text" id="input" placeholder="Type a command and press Enter" class="flex-1 p-2 rounded-l-lg text-white">
+        <button onclick="sendMessage()" class="bg-teal-500 text-white p-2 rounded-r-lg hover:bg-teal-600 transition">Send</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-6 text-center text-gray-500 text-sm">
+      <p>© 2025 Terminal Chat Simulator Community. Proudly open-source.</p>
+    </footer>
+  </div>
 
   <script>
     const ws = new WebSocket('wss://appterminal.onrender.com');
@@ -20,7 +67,7 @@
     let isTyping = false;
 
     ws.onopen = () => {
-      output.textContent += 'Connected to terminal simulator.\n';
+      output.textContent += 'Connected to Terminal Chat Simulator at 06:58 PM -05, Thursday, June 05, 2025.\n';
     };
 
     ws.onmessage = (event) => {
@@ -28,29 +75,29 @@
       if (message.includes('AI is typing...')) {
         if (!isTyping) {
           isTyping = true;
-          output.textContent += '\n' + message;
+          output.innerHTML += '<div class="typing">' + message + '</div>';
           output.scrollTop = output.scrollHeight;
         }
       } else {
         isTyping = false;
         // Replace the last "typing" line with the response
-        const lines = output.textContent.split('\n');
+        const lines = output.innerHTML.split('<div>').filter(line => line.trim());
         if (lines.length > 1 && lines[lines.length - 2].includes('AI is typing...')) {
           lines[lines.length - 2] = message;
-          output.textContent = lines.join('\n');
+          output.innerHTML = lines.join('<div>').replace(/<\/div>$/, '');
         } else {
-          output.textContent += '\n' + message;
+          output.innerHTML += '<div>' + message + '</div>';
         }
         output.scrollTop = output.scrollHeight;
       }
     };
 
     ws.onclose = () => {
-      output.textContent += '\nDisconnected from terminal simulator.\n';
+      output.innerHTML += '<div>Disconnected from Terminal Chat Simulator.</div>\n';
     };
 
     ws.onerror = (error) => {
-      output.textContent += '\nError: ' + error + '\n';
+      output.innerHTML += '<div>Error: ' + error + '</div>\n';
     };
 
     function sendMessage() {

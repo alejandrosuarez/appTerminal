@@ -16,7 +16,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Serve a simple HTML page for testing (optional)
 app.get('/', (req, res) => {
-  res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
+  //res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
+  res.sendFile(__dirname + '/index.html');
 });
 
 // Function to format JSON results into a readable string
