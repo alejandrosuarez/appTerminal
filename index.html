@@ -109,7 +109,7 @@
   </div>
 
   <script>
-    // Particles.js Initialization with fallback
+    // --- PARTICLE & ELEMENT SETUP ---
     function initParticles() {
       particlesJS({
         particles: {
@@ -127,109 +127,136 @@
       });
     }
 
-    // WebSocket Logic with Error Handling
-     // Dynamically set WebSocket URL for local testing and production
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const wsUrl = isLocal
-      ? 'ws://localhost:5000' // Your local server URL
-      : 'wss://appterminal.onrender.com'; // Your production Render URL
-
-    const ws = new WebSocket(wsUrl);
     const output = document.getElementById('output');
     const input = document.getElementById('input');
+    const pushToTalkButton = document.getElementById('pushToTalk');
+    let ws; // Will be defined in connectWebSocket
     let isTyping = false;
-    let isInChat = false; // Track chat state
+    let isInChat = false;
 
-    ws.onopen = () => {
-      console.log('WebSocket connection opened');
-      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 03:00 PM -05, Monday, June 09, 2025.</div>\n';
-      if (typeof initializeVoice === 'function') {
-        initializeVoice(ws); // Initialize voice module only if function exists
-      } else {
-        console.error('initializeVoice function not loaded');
-      }
-    };
 
-    ws.onmessage = (event) => {
-      let messageData;
-      let isVoiceMessage = false;
+    // --- NEW FUNCTION TO MANAGE WEBSOCKET CONNECTION ---
+    function connectWebSocket() {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const wsUrl = isLocal ? 'ws://localhost:5000' : 'wss://appterminal.onrender.com';
 
-      // Try to parse the message as JSON
-      try {
-        messageData = JSON.parse(event.data);
-        if (messageData.type === 'voiceMessage') {
-          isVoiceMessage = true;
-        }
-      } catch (e) {
-        // If it's not JSON, treat it as a plain text message
-        messageData = event.data;
-      }
+        ws = new WebSocket(wsUrl);
+        console.log('Attempting to connect to WebSocket...');
+        output.innerHTML += '<div>Connecting...</div>\n';
 
-      // --- FIX: Add back the button visibility logic ---
-      if (typeof messageData === 'string') {
-        // Show the button when the user successfully joins the chat
-        if (messageData.includes('Welcome,')) {
-          isInChat = true;
-          document.getElementById('pushToTalk').style.display = 'inline-block';
-        }
-        // Hide the button if the user leaves or is disconnected
-        else if (messageData.includes('You have left the chat') || messageData.includes('Disconnected')) {
-          isInChat = false;
-          document.getElementById('pushToTalk').style.display = 'none';
-        }
-      }
-      // --- END OF FIX ---
+        // --- Event Handler: When connection opens ---
+        ws.onopen = () => {
+            console.log('WebSocket connection opened');
+            // Check sessionStorage to see if we have a previous session
+            const userInfo = sessionStorage.getItem('chatUserInfo');
+            if (userInfo) {
+                const { name } = JSON.parse(userInfo);
+                console.log('Restoring session for:', name);
+                ws.send(JSON.stringify({ type: 'reconnect', name: name }));
+            } else {
+                 output.innerHTML += '<div>Connected to Terminal Chat Simulator.</div>\n';
+            }
 
-      // Stop the "AI is typing..." indicator
-      const typingIndicator = output.querySelector('.typing');
-      if (typingIndicator) {
-        typingIndicator.remove();
-      }
-
-      if (isVoiceMessage) {
-        // Create the UI for the on-demand voice message
-        const messageContainer = document.createElement('div');
-        messageContainer.style.marginBottom = '10px';
-        const senderText = document.createTextNode(`> Voice message from ${messageData.senderName}: `);
-        messageContainer.appendChild(senderText);
-        const playButton = document.createElement('button');
-        playButton.textContent = 'Play Audio';
-        playButton.dataset.audioSrc = messageData.audioData;
-        playButton.onclick = (e) => {
-          const audioSrc = e.currentTarget.dataset.audioSrc;
-          const audio = new Audio(audioSrc);
-          audio.play();
+            if (typeof initializeVoice === 'function') {
+                initializeVoice(ws);
+            }
         };
-        messageContainer.appendChild(playButton);
-        output.appendChild(messageContainer);
 
-      } else {
-        // Handle regular text messages
-        if (typeof messageData === 'string' && messageData.includes('AI is typing...')) {
-          output.innerHTML += '<div class="typing">' + messageData + '</div>\n';
-        } else {
-          output.innerHTML += '<div>' + messageData + '</div>\n';
+        // --- Event Handler: When a message is received ---
+        ws.onmessage = (event) => {
+            let messageData;
+            let isJson = false;
+            let messageType = null;
+
+            try {
+                messageData = JSON.parse(event.data);
+                isJson = true;
+                messageType = messageData.type;
+            } catch (e) {
+                messageData = event.data;
+            }
+            
+            // If we get a session confirmation, save it and stop
+            if (isJson && messageType === 'session_established') {
+                sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: messageData.name }));
+                console.log('Session established for:', messageData.name);
+                return;
+            }
+
+            const typingIndicator = output.querySelector('.typing');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+
+            // Show/Hide "Tap to Talk" button based on welcome/goodbye messages
+            if (typeof messageData === 'string') {
+                if (messageData.includes('Welcome,')) {
+                    isInChat = true;
+                    pushToTalkButton.style.display = 'inline-block';
+                } else if (messageData.includes('You have left the chat') || messageData.includes('Disconnected')) {
+                    isInChat = false;
+                    pushToTalkButton.style.display = 'none';
+                }
+            }
+            
+            // Handle creating the Play button for voice messages
+            if (isJson && messageType === 'voiceMessage') {
+                const messageContainer = document.createElement('div');
+                messageContainer.style.marginBottom = '10px';
+                const senderText = document.createTextNode(`> Voice message from ${messageData.senderName}: `);
+                messageContainer.appendChild(senderText);
+                const playButton = document.createElement('button');
+                playButton.textContent = 'Play Audio';
+                playButton.dataset.audioSrc = messageData.audioData;
+                playButton.onclick = (e) => {
+                    const audioSrc = e.currentTarget.dataset.audioSrc;
+                    const audio = new Audio(audioSrc);
+                    audio.play();
+                };
+                messageContainer.appendChild(playButton);
+                output.appendChild(messageContainer);
+            } else {
+                 // Handle regular text messages
+                if (typeof messageData === 'string' && messageData.includes('AI is typing...')) {
+                    output.innerHTML += '<div class="typing">' + messageData + '</div>\n';
+                } else {
+                    output.innerHTML += '<div>' + messageData + '</div>\n';
+                }
+            }
+            output.scrollTop = output.scrollHeight;
+        };
+
+        // --- Event Handler: When connection closes ---
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+            output.innerHTML += '<div>Connection lost. Will attempt to reconnect automatically.</div>\n';
+            isInChat = false;
+            pushToTalkButton.style.display = 'none';
+        };
+
+        // --- Event Handler: On connection error ---
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            output.innerHTML += '<div>Error: Could not connect.</div>\n';
+        };
+    }
+
+    // --- NEW: EVENT LISTENER FOR AUTO-RECONNECTION ---
+    document.addEventListener('visibilitychange', () => {
+        // When the tab becomes visible again...
+        if (document.visibilityState === 'visible') {
+            // ...and if the websocket is closed, try to reconnect.
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                connectWebSocket();
+            }
         }
-      }
+    });
 
-      // Scroll to the bottom
-      output.scrollTop = output.scrollHeight;
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      output.innerHTML += '<div>Disconnected from Terminal Chat Simulator.</div>\n';
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      output.innerHTML += '<div>Error: WebSocket connection failed. Check console for details.</div>\n';
-    };
-
+    // --- CORE APP LOGIC ---
     function sendMessage() {
       const message = input.value;
       if (message) {
-        output.innerHTML += '<div class="prompt">$ </div>' + message + '\n';
+        output.innerHTML += `<div class="prompt">$ </div>${message}\n`;
         ws.send(message);
         input.value = '';
         output.scrollTop = output.scrollHeight;
@@ -242,7 +269,6 @@
       }
     });
 
-    // Dynamic Particles
     function createParticle() {
       const particle = document.createElement('div');
       particle.className = 'particle';
@@ -251,23 +277,22 @@
       document.body.appendChild(particle);
       setTimeout(() => particle.remove(), 3000);
     }
-    setInterval(createParticle, 200);
-
-    // Voice Integration
-    const pushToTalkButton = document.getElementById('pushToTalk');
-    function handlePushToTalk() { // Renamed to avoid conflict
-      if (isInChat) { // Only allow if in chat
+    
+    function handlePushToTalk() {
+      if (isInChat) {
         if (typeof togglePushToTalkInternal === 'function') {
           togglePushToTalkInternal(ws, pushToTalkButton);
         } else {
-          output.innerHTML += '<div>Error: togglePushToTalkInternal function not loaded.</div>\n';
-          output.scrollTop = output.scrollHeight;
+          output.innerHTML += '<div>Error: Voice function not loaded.</div>\n';
         }
       } else {
         output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
-        output.scrollTop = output.scrollHeight;
       }
     }
-  </script>
+    
+    // --- INITIALIZE ---
+    setInterval(createParticle, 200);
+    connectWebSocket(); // Initial call to connect when the page loads
+</script>
 </body>
 </html>

@@ -2,11 +2,29 @@
 const clients = new Map(); // ws => { name, state }
 
 function handleChat(ws, message) {
-  const input = message.toString().trim();
+  let input;
+  let isJson = false;
+  
+  // First, try to parse the message as JSON
+  try {
+      input = JSON.parse(message.toString());
+      isJson = true;
+  } catch (e) {
+      input = message.toString().trim();
+  }
+
+  if (isJson && input.type === 'reconnect') {
+      const client = { name: input.name, state: 'active' };
+      clients.set(ws, client);
+      ws.send(`Welcome back, ${client.name}! Your session is restored.`);
+      broadcast(`${client.name} has reconnected.`, ws);
+      return true;
+  }
+
   const client = clients.get(ws);
 
   // If the client is in an active chat and sends audio data
-  if (client?.state === 'active' && input.startsWith('data:audio/')) {
+  if (client?.state === 'active' && typeof input === 'string' && input.startsWith('data:audio/')) {
     // Create a structured payload for the voice message
     const voicePayload = {
       type: 'voiceMessage',
@@ -20,7 +38,7 @@ function handleChat(ws, message) {
     return true; // Mark the message as handled
   }
   
-  const lowered = input.toLowerCase();
+  const lowered = typeof input === 'string' ? input.toLowerCase() : '';
 
   // Not in chat yet
   if (!clients.has(ws) && lowered === 'chat') {
@@ -35,6 +53,11 @@ function handleChat(ws, message) {
   if (client?.state === 'awaitingName') {
     client.name = input;
     client.state = 'active';
+
+    // Send a special message for the client to save its new identity
+    const sessionInfo = { type: 'session_established', name: client.name };
+    ws.send(JSON.stringify(sessionInfo));
+
     ws.send(`Welcome, ${client.name}! You can now chat. Type "exit" to leave.`);
     broadcast(`${client.name} has joined the chat.`, ws);
     return true;
