@@ -1,8 +1,6 @@
 // chat.js
 const clients = new Map(); // ws => { name, state }
 
-const { handleVoiceMessage } = require('./voice'); // Import voice module
-
 function handleChat(ws, message) {
   const input = message.toString().trim();
   const lowered = input.toLowerCase();

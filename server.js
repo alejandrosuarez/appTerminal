@@ -1,5 +1,4 @@
-const { handleChat, removeClient } = require('./chat');
-const { broadcastVoiceMessage } = require('./voice'); // Import voice module
+const { handleChat, removeClient, broadcast } = require('./chat');
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -69,7 +68,7 @@ wss.on('connection', async (ws) => {
     const input = message.toString().trim();
     // Handle audio data
     if (input.startsWith('data:audio/')) {
-      broadcastVoiceMessage(ws, input); // Broadcast the audio data to other clients
+      broadcast(input, ws); // Broadcast the audio data to other clients
       return; // Exit early to avoid processing as text
     }
     // Handle guest chat system

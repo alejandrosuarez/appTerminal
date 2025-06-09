@@ -145,6 +145,15 @@
     };
 
     ws.onmessage = (event) => {
+      if (typeof event.data === 'string' && event.data.startsWith('data:audio/')) {
+        const audio = new Audio(event.data);
+        audio.play();
+        
+        // Optional: Add a message to the terminal to show that audio is playing.
+        output.innerHTML += '<div>&gt; Voice message received, playing...</div>\n';
+        output.scrollTop = output.scrollHeight;
+        return; // Stop here so it doesn't get treated as text
+      }
       console.log('Message received:', event.data);
       const message = event.data;
       if (message.includes('Welcome,')) {

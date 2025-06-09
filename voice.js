@@ -50,29 +50,8 @@ function togglePushToTalkInternal(ws, buttonElement) { // Renamed to avoid confl
     }
 }
 
-function broadcastVoiceMessage(senderWs, audioData) {
-    for (const [clientWs] of clients.entries()) {
-        if (clientWs !== senderWs && clientWs.readyState === 1) {
-            clientWs.send(audioData);
-        }
-    }
-}
-
-function handleVoiceMessage(ws, message) {
-    if (message.toString().trim().startsWith('data:audio/')) {
-        const client = clients.get(ws);
-        if (client?.state === 'active') {
-            broadcast(`${client.name} sent a voice message.`, ws, true);
-        }
-        return true;
-    }
-    return false;
-}
-
 // Expose functions to global scope only in browser
 if (typeof window !== 'undefined') {
     window.initializeVoice = initializeVoice;
     window.togglePushToTalkInternal = togglePushToTalkInternal; // Use renamed function
-    window.broadcastVoiceMessage = broadcastVoiceMessage;
-    window.handleVoiceMessage = handleVoiceMessage;
 }
