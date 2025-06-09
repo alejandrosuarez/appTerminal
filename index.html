@@ -106,7 +106,7 @@
     <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
     <button onclick="sendMessage()">Execute</button>
     <button id="pushToTalk" onclick="handlePushToTalk()" style="display: none;">Tap to Talk</button>
-    <button id="reconnectButton" onclick="connectWebSocket()" style="display: none;">Reconnect</button>
+    <button id="reconnectButton" style="display: none;">Reconnect</button>
   </div>
 
   <script>
@@ -184,6 +184,11 @@
             reconnectButton.style.display = 'inline-block';
         };
     }
+
+    // The reconnect button now simply reloads the page.
+    reconnectButton.onclick = () => {
+        window.location.reload();
+    };
 
     function sendMessage() {
         const message = input.value;
