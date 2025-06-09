@@ -105,7 +105,7 @@
     <div id="output"></div>
     <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
     <button onclick="sendMessage()">Execute</button>
-    <button id="pushToTalk" onclick="togglePushToTalk()">Push to Talk</button>
+    <button id="pushToTalk" onclick="togglePushToTalk()" style="display: none;">Push to Talk</button>
   </div>
 
   <script>
@@ -132,15 +132,24 @@
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     let isTyping = false;
+    let isInChat = false; // Track chat state
 
     ws.onopen = () => {
       console.log('WebSocket connection opened');
-      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:25 PM -05, Thursday, June 05, 2025.</div>\n';
+      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 02:28 PM -05, Monday, June 09, 2025.</div>\n';
+      initializeVoice(ws); // Initialize voice module
     };
 
     ws.onmessage = (event) => {
       console.log('Message received:', event.data);
       const message = event.data;
+      if (message.includes('Welcome,')) {
+        isInChat = true; // User is now in chat
+        document.getElementById('pushToTalk').style.display = 'inline-block'; // Show button
+      } else if (message.includes('You have left the chat') || message.includes('Disconnected')) {
+        isInChat = false; // User left chat
+        document.getElementById('pushToTalk').style.display = 'none'; // Hide button
+      }
       if (message.includes('AI is typing...')) {
         if (!isTyping) {
           isTyping = true;
@@ -197,16 +206,15 @@
     }
     setInterval(createParticle, 200);
 
-    // Voice Integration - Add this block
+    // Voice Integration
     const pushToTalkButton = document.getElementById('pushToTalk');
-    ws.onopen = () => {
-      console.log('WebSocket connection opened');
-      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:25 PM -05, Thursday, June 05, 2025.</div>\n';
-      initializeVoice(ws); // Initialize voice module
-    };
-
     function togglePushToTalk() {
-      togglePushToTalk(ws, pushToTalkButton);
+      if (isInChat) { // Only allow if in chat
+        togglePushToTalk(ws, pushToTalkButton);
+      } else {
+        output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
+        output.scrollTop = output.scrollHeight;
+      }
     }
   </script>
 </body>
