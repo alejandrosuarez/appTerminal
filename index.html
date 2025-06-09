@@ -106,103 +106,85 @@
     <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
     <button onclick="sendMessage()">Execute</button>
     <button id="pushToTalk" onclick="handlePushToTalk()" style="display: none;">Tap to Talk</button>
+    <button id="reconnectButton" onclick="connectWebSocket()" style="display: none;">Reconnect</button>
   </div>
 
   <script>
-    // --- PARTICLE & ELEMENT SETUP ---
-    function initParticles() { /* ... no changes ... */ }
+    function initParticles() { /* ... unchanged ... */ }
 
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     const pushToTalkButton = document.getElementById('pushToTalk');
-    let ws; 
+    const reconnectButton = document.getElementById('reconnectButton');
+    let ws;
     let isInChat = false;
 
-    // --- ROBUST RECONNECTION LOGIC ---
-    function reconnectIfNeeded() {
-        if (!ws || ws.readyState === WebSocket.CLOSED) {
-            console.log('WebSocket is closed. Reconnecting...');
-            connectWebSocket();
-        }
-    }
-    // Listen for multiple events for reliability on mobile
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconnectIfNeeded(); });
-    window.addEventListener('pageshow', reconnectIfNeeded);
-    window.addEventListener('online', reconnectIfNeeded);
-
-    // --- FUNCTION TO MANAGE WEBSOCKET CONNECTION ---
     function connectWebSocket() {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const wsUrl = isLocal ? 'ws://localhost:5000' : 'wss://appterminal.onrender.com';
+        reconnectButton.style.display = 'none'; // Hide button on connection attempt
+        const wsUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'ws://localhost:5000'
+            : 'wss://appterminal.onrender.com';
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-            console.log('WebSocket connection opened');
+            output.innerHTML += '<div>Connection established.</div>\n';
             const userInfo = sessionStorage.getItem('chatUserInfo');
             if (userInfo) {
                 const { name } = JSON.parse(userInfo);
                 ws.send(JSON.stringify({ type: 'reconnect', name }));
-            } else {
-                output.innerHTML += '<div>Connected to Terminal Chat Simulator. Type "chat" to begin.</div>\n';
             }
             if (typeof initializeVoice === 'function') initializeVoice(ws);
         };
 
         ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data); // We now expect all server messages to be JSON
-            
-            // Save session info when a user first joins
-            if (msg.type === 'session_established') {
-                sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
-                return; // Don't display this message
+            // Handle session saving
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'session_established') {
+                    sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
+                    return; // Don't display this technical message
+                }
+            } catch (e) { /* Not a JSON message, continue */ }
+
+            // Handle voice messages (which are just raw data URLs now)
+            if (event.data.startsWith('data:audio/')) {
+                // This logic is simplified as the server just relays the audio data
+                const messageContainer = document.createElement('div');
+                const playButton = document.createElement('button');
+                playButton.textContent = 'Play Voice Message';
+                playButton.onclick = () => new Audio(event.data).play();
+                messageContainer.appendChild(playButton);
+                output.appendChild(messageContainer);
+                output.scrollTop = output.scrollHeight;
+                return;
             }
 
-            let displayHtml = '';
-            switch (msg.type) {
-                case 'voiceMessage':
-                    // Use a class for the button to attach a single, delegated event listener
-                    const playButton = `<button class="play-audio-btn" data-audio-src="${msg.audioData}">Play Audio</button>`;
-                    displayHtml = `<div>&gt; Voice message from ${msg.senderName}: ${playButton}</div>`;
-                    break;
-                case 'text_message':
-                    displayHtml = `<div><b>${msg.senderName}</b>: ${msg.message}</div>`;
-                    break;
-                case 'system_update':
-                    displayHtml = `<div><i>${msg.message}</i></div>`;
-                    // Check message content to manage the chat state and UI
-                    if (msg.message.includes('Welcome,') || msg.message.includes('Welcome back,')) {
-                        isInChat = true;
-                        pushToTalkButton.style.display = 'inline-block';
-                    } else if (msg.message.includes('You have left') || msg.message.includes('disconnected')) {
-                        isInChat = false;
-                        pushToTalkButton.style.display = 'none';
-                    }
-                    break;
+            // Handle all other text messages
+            const messageText = event.data;
+            if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
+                isInChat = true;
+                pushToTalkButton.style.display = 'inline-block';
+            } else if (messageText.includes('You have left the chat')) {
+                isInChat = false;
+                pushToTalkButton.style.display = 'none';
             }
-
-            if (displayHtml) output.innerHTML += displayHtml;
+            output.innerHTML += `<div>${messageText}</div>\n`;
             output.scrollTop = output.scrollHeight;
         };
-        
+
         ws.onclose = () => {
-            console.log('WebSocket connection closed.');
             output.innerHTML += '<div><i>Connection lost.</i></div>\n';
+            reconnectButton.style.display = 'inline-block'; // Show reconnect button
             isInChat = false;
             pushToTalkButton.style.display = 'none';
         };
 
-        ws.onerror = (error) => console.error('WebSocket error:', error);
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            reconnectButton.style.display = 'inline-block';
+        };
     }
-    
-    // Use a single event listener on the parent container for all audio buttons
-    output.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('play-audio-btn')) {
-            const audio = new Audio(e.target.dataset.audioSrc);
-            audio.play();
-        }
-    });
 
-    // --- CORE APP LOGIC ---
     function sendMessage() {
         const message = input.value;
         if (message && ws && ws.readyState === WebSocket.OPEN) {
@@ -212,7 +194,7 @@
         }
     }
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-
+    
     function handlePushToTalk() {
         if (isInChat) {
             if (typeof togglePushToTalkInternal === 'function') {
@@ -223,8 +205,8 @@
         }
     }
     
-    // --- INITIALIZE ---
-    connectWebSocket(); // Initial call to connect when the page loads
+    // Initialize
+    connectWebSocket();
 </script>
 </body>
 </html>

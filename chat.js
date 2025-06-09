@@ -1,84 +1,82 @@
 const clients = new Map();
 
-// Simplified broadcast: sends a message to ALL connected clients.
-function broadcast(messagePayload) {
-  const messageString = JSON.stringify(messagePayload);
-  for (const [clientWs] of clients.entries()) {
-    if (clientWs.readyState === 1) { // 1 means WebSocket.OPEN
-      clientWs.send(messageString);
+function broadcast(message, sender) {
+    // Send to everyone EXCEPT the original sender
+    for (const [clientWs] of clients.entries()) {
+        if (clientWs !== sender && clientWs.readyState === 1) {
+            clientWs.send(message);
+        }
     }
-  }
 }
 
 function handleChat(ws, message) {
     let input;
     try {
+        // Check for our special reconnect message
         input = JSON.parse(message.toString());
+        if (input.type === 'reconnect') {
+            const client = { name: input.name, state: 'active' };
+            clients.set(ws, client);
+            ws.send(`Welcome back, ${client.name}! Your session is restored.`);
+            broadcast(`${client.name} has reconnected.`, ws);
+            return true;
+        }
     } catch (e) {
+        // If not JSON, treat it as a regular text command
         input = message.toString().trim();
     }
 
-    // Handle a reconnecting user
-    if (input.type === 'reconnect') {
-        const client = { name: input.name, state: 'active' };
-        clients.set(ws, client);
-        // Send a specific welcome back message to the user
-        ws.send(JSON.stringify({ type: 'system_update', message: `Welcome back, ${client.name}! Your session is restored.` }));
-        // Announce the reconnection to everyone
-        broadcast({ type: 'system_update', message: `${client.name} has reconnected.` });
-        return true;
-    }
-
+    const lowered = input.toLowerCase();
     const client = clients.get(ws);
-    const textInput = typeof input === 'string' ? input : '';
 
-    // Handle a voice message
-    if (client?.state === 'active' && textInput.startsWith('data:audio/')) {
-        broadcast({ type: 'voiceMessage', senderName: client.name, audioData: textInput });
+    // Voice messages from an active user
+    if (client?.state === 'active' && input.startsWith('data:audio/')) {
+        broadcast(input, ws);
         return true;
     }
 
-    // Handle a new user typing "chat"
-    if (!clients.has(ws) && textInput.toLowerCase() === 'chat') {
-        ws.send(JSON.stringify({ type: 'system_update', message: 'Enter your guest name:' }));
+    // New user joining
+    if (!clients.has(ws) && lowered === 'chat') {
+        ws.send('Enter your guest name:');
         clients.set(ws, { state: 'awaitingName' });
         return true;
     }
 
-    // Handle a new user submitting their name
+    // New user providing name
     if (client?.state === 'awaitingName') {
-        client.name = textInput;
+        client.name = input;
         client.state = 'active';
-        
+        // Tell the client to save their session info
         ws.send(JSON.stringify({ type: 'session_established', name: client.name }));
-        ws.send(JSON.stringify({ type: 'system_update', message: `Welcome, ${client.name}! You can now chat. Type "exit" to leave.` }));
-        broadcast({ type: 'system_update', message: `${client.name} has joined the chat.` });
+        ws.send(`Welcome, ${client.name}! You can now chat.`);
+        broadcast(`${client.name} has joined the chat.`, ws);
         return true;
     }
     
-    // Handle leaving the chat
-    if (client?.state === 'active' && textInput.toLowerCase() === 'exit') {
-        broadcast({ type: 'system_update', message: `${client.name} has left the chat.` });
-        ws.send(JSON.stringify({ type: 'system_update', message: 'You have left the chat. Type "chat" to join again.' }));
+    // An active user leaving the chat
+    if (client?.state === 'active' && lowered === 'exit-chat') { // Use a specific command
+        broadcast(`${client.name} has left the chat.`, ws);
+        ws.send('You have left the chat. Type "chat" to join again.');
         clients.delete(ws);
         return true;
     }
-
-    // Handle a regular text message
+    
+    // If an active user types anything else, it's a chat message
     if (client?.state === 'active') {
-        broadcast({ type: 'text_message', senderName: client.name, message: textInput });
+        broadcast(`${client.name}: ${input}`, ws);
         return true;
     }
 
-    return false; // Not handled by chat module
+    // If none of the above, it's a command for server.js (like 'sql')
+    return false;
 }
 
 function removeClient(ws) {
   const client = clients.get(ws);
-  if (client?.state === 'active') {
-    broadcast({ type: 'system_update', message: `${client.name} has disconnected.` });
+  if (client) {
+    broadcast(`${client.name} has disconnected.`, ws);
+    clients.delete(ws);
   }
-  clients.delete(ws);
 }
 
 module.exports = { handleChat, removeClient };
