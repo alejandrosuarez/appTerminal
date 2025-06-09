@@ -66,11 +66,7 @@ wss.on('connection', async (ws) => {
 
   ws.on('message', async (message) => {
     const input = message.toString().trim();
-    // Handle audio data
-    if (input.startsWith('data:audio/')) {
-      broadcast(input, ws); // Broadcast the audio data to other clients
-      return; // Exit early to avoid processing as text
-    }
+    
     // Handle guest chat system
     const wasHandledByChat = handleChat(ws, message);
     if (wasHandledByChat) return;

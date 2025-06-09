@@ -3,6 +3,23 @@ const clients = new Map(); // ws => { name, state }
 
 function handleChat(ws, message) {
   const input = message.toString().trim();
+  const client = clients.get(ws);
+
+  // If the client is in an active chat and sends audio data
+  if (client?.state === 'active' && input.startsWith('data:audio/')) {
+    // Create a structured payload for the voice message
+    const voicePayload = {
+      type: 'voiceMessage',
+      senderName: client.name,
+      audioData: input,
+      timestamp: new Date().getTime() // Unique ID for the audio element
+    };
+    
+    // Broadcast the JSON object to all clients
+    broadcast(JSON.stringify(voicePayload));
+    return true; // Mark the message as handled
+  }
+  
   const lowered = input.toLowerCase();
 
   // Not in chat yet
@@ -12,7 +29,7 @@ function handleChat(ws, message) {
     return true;
   }
 
-  const client = clients.get(ws);
+  
 
   // Awaiting name
   if (client?.state === 'awaitingName') {

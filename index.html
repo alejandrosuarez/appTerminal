@@ -128,7 +128,13 @@
     }
 
     // WebSocket Logic with Error Handling
-    const ws = new WebSocket('wss://appterminal.onrender.com');
+     // Dynamically set WebSocket URL for local testing and production
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const wsUrl = isLocal
+      ? 'ws://localhost:5000' // Your local server URL
+      : 'wss://appterminal.onrender.com'; // Your production Render URL
+
+    const ws = new WebSocket(wsUrl);
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     let isTyping = false;
@@ -145,41 +151,69 @@
     };
 
     ws.onmessage = (event) => {
-      if (typeof event.data === 'string' && event.data.startsWith('data:audio/')) {
-        const audio = new Audio(event.data);
-        audio.play();
-        
-        // Optional: Add a message to the terminal to show that audio is playing.
-        output.innerHTML += '<div>&gt; Voice message received, playing...</div>\n';
-        output.scrollTop = output.scrollHeight;
-        return; // Stop here so it doesn't get treated as text
-      }
-      console.log('Message received:', event.data);
-      const message = event.data;
-      if (message.includes('Welcome,')) {
-        isInChat = true; // User is now in chat
-        document.getElementById('pushToTalk').style.display = 'inline-block'; // Show button
-      } else if (message.includes('You have left the chat') || message.includes('Disconnected')) {
-        isInChat = false; // User left chat
-        document.getElementById('pushToTalk').style.display = 'none'; // Hide button
-      }
-      if (message.includes('AI is typing...')) {
-        if (!isTyping) {
-          isTyping = true;
-          output.innerHTML += '<div class="typing">' + message + '</div>\n';
-          output.scrollTop = output.scrollHeight;
+      let messageData;
+      let isVoiceMessage = false;
+
+      // Try to parse the message as JSON
+      try {
+        messageData = JSON.parse(event.data);
+        if (messageData.type === 'voiceMessage') {
+          isVoiceMessage = true;
         }
+      } catch (e) {
+        // If it's not JSON, treat it as a plain text message
+        messageData = event.data;
+      }
+
+      // --- FIX: Add back the button visibility logic ---
+      if (typeof messageData === 'string') {
+        // Show the button when the user successfully joins the chat
+        if (messageData.includes('Welcome,')) {
+          isInChat = true;
+          document.getElementById('pushToTalk').style.display = 'inline-block';
+        }
+        // Hide the button if the user leaves or is disconnected
+        else if (messageData.includes('You have left the chat') || messageData.includes('Disconnected')) {
+          isInChat = false;
+          document.getElementById('pushToTalk').style.display = 'none';
+        }
+      }
+      // --- END OF FIX ---
+
+      // Stop the "AI is typing..." indicator
+      const typingIndicator = output.querySelector('.typing');
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+
+      if (isVoiceMessage) {
+        // Create the UI for the on-demand voice message
+        const messageContainer = document.createElement('div');
+        messageContainer.style.marginBottom = '10px';
+        const senderText = document.createTextNode(`> Voice message from ${messageData.senderName}: `);
+        messageContainer.appendChild(senderText);
+        const playButton = document.createElement('button');
+        playButton.textContent = 'Play Audio';
+        playButton.dataset.audioSrc = messageData.audioData;
+        playButton.onclick = (e) => {
+          const audioSrc = e.currentTarget.dataset.audioSrc;
+          const audio = new Audio(audioSrc);
+          audio.play();
+        };
+        messageContainer.appendChild(playButton);
+        output.appendChild(messageContainer);
+
       } else {
-        isTyping = false;
-        const lines = output.innerHTML.split('<div>').filter(line => line.trim());
-        if (lines.length > 1 && lines[lines.length - 2].includes('AI is typing...')) {
-          lines[lines.length - 2] = message;
-          output.innerHTML = lines.join('<div>').replace(/<\/div>$/, '') + '\n';
+        // Handle regular text messages
+        if (typeof messageData === 'string' && messageData.includes('AI is typing...')) {
+          output.innerHTML += '<div class="typing">' + messageData + '</div>\n';
         } else {
-          output.innerHTML += '<div>' + message + '</div>\n';
+          output.innerHTML += '<div>' + messageData + '</div>\n';
         }
-        output.scrollTop = output.scrollHeight;
       }
+
+      // Scroll to the bottom
+      output.scrollTop = output.scrollHeight;
     };
 
     ws.onclose = () => {
