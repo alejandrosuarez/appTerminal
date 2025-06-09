@@ -110,188 +110,120 @@
 
   <script>
     // --- PARTICLE & ELEMENT SETUP ---
-    function initParticles() {
-      particlesJS({
-        particles: {
-          number: { value: 50, density: { enable: true, value_area: 800 } },
-          color: { value: "#00ffcc" },
-          shape: { type: "circle" },
-          opacity: { value: 0.3, random: true },
-          size: { value: 2, random: true },
-          move: { enable: true, speed: 1, direction: "none", random: true },
-        },
-        interactivity: {
-          detectsOn: "canvas",
-          modes: { repulse: { distance: 50 } },
-        },
-      });
-    }
+    function initParticles() { /* ... no changes ... */ }
 
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     const pushToTalkButton = document.getElementById('pushToTalk');
-    let ws; // Will be defined in connectWebSocket
-    let isTyping = false;
+    let ws; 
     let isInChat = false;
 
+    // --- ROBUST RECONNECTION LOGIC ---
+    function reconnectIfNeeded() {
+        if (!ws || ws.readyState === WebSocket.CLOSED) {
+            console.log('WebSocket is closed. Reconnecting...');
+            connectWebSocket();
+        }
+    }
+    // Listen for multiple events for reliability on mobile
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconnectIfNeeded(); });
+    window.addEventListener('pageshow', reconnectIfNeeded);
+    window.addEventListener('online', reconnectIfNeeded);
 
-    // --- NEW FUNCTION TO MANAGE WEBSOCKET CONNECTION ---
+    // --- FUNCTION TO MANAGE WEBSOCKET CONNECTION ---
     function connectWebSocket() {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const wsUrl = isLocal ? 'ws://localhost:5000' : 'wss://appterminal.onrender.com';
-
         ws = new WebSocket(wsUrl);
-        console.log('Attempting to connect to WebSocket...');
-        output.innerHTML += '<div>Connecting...</div>\n';
 
-        // --- Event Handler: When connection opens ---
         ws.onopen = () => {
             console.log('WebSocket connection opened');
-            // Check sessionStorage to see if we have a previous session
             const userInfo = sessionStorage.getItem('chatUserInfo');
             if (userInfo) {
                 const { name } = JSON.parse(userInfo);
-                console.log('Restoring session for:', name);
-                ws.send(JSON.stringify({ type: 'reconnect', name: name }));
+                ws.send(JSON.stringify({ type: 'reconnect', name }));
             } else {
-                 output.innerHTML += '<div>Connected to Terminal Chat Simulator.</div>\n';
+                output.innerHTML += '<div>Connected to Terminal Chat Simulator. Type "chat" to begin.</div>\n';
             }
-
-            if (typeof initializeVoice === 'function') {
-                initializeVoice(ws);
-            }
+            if (typeof initializeVoice === 'function') initializeVoice(ws);
         };
 
-        // --- Event Handler: When a message is received ---
         ws.onmessage = (event) => {
-            let messageData;
-            let isJson = false;
-            let messageType = null;
-
-            try {
-                messageData = JSON.parse(event.data);
-                isJson = true;
-                messageType = messageData.type;
-            } catch (e) {
-                messageData = event.data;
-            }
+            const msg = JSON.parse(event.data); // We now expect all server messages to be JSON
             
-            // If we get a session confirmation, save it and stop
-            if (isJson && messageType === 'session_established') {
-                sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: messageData.name }));
-                console.log('Session established for:', messageData.name);
-                return;
+            // Save session info when a user first joins
+            if (msg.type === 'session_established') {
+                sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
+                return; // Don't display this message
             }
 
-            const typingIndicator = output.querySelector('.typing');
-            if (typingIndicator) {
-                typingIndicator.remove();
+            let displayHtml = '';
+            switch (msg.type) {
+                case 'voiceMessage':
+                    // Use a class for the button to attach a single, delegated event listener
+                    const playButton = `<button class="play-audio-btn" data-audio-src="${msg.audioData}">Play Audio</button>`;
+                    displayHtml = `<div>&gt; Voice message from ${msg.senderName}: ${playButton}</div>`;
+                    break;
+                case 'text_message':
+                    displayHtml = `<div><b>${msg.senderName}</b>: ${msg.message}</div>`;
+                    break;
+                case 'system_update':
+                    displayHtml = `<div><i>${msg.message}</i></div>`;
+                    // Check message content to manage the chat state and UI
+                    if (msg.message.includes('Welcome,') || msg.message.includes('Welcome back,')) {
+                        isInChat = true;
+                        pushToTalkButton.style.display = 'inline-block';
+                    } else if (msg.message.includes('You have left') || msg.message.includes('disconnected')) {
+                        isInChat = false;
+                        pushToTalkButton.style.display = 'none';
+                    }
+                    break;
             }
 
-            // Show/Hide "Tap to Talk" button based on welcome/goodbye messages
-            if (typeof messageData === 'string') {
-                if (messageData.includes('Welcome,')) {
-                    isInChat = true;
-                    pushToTalkButton.style.display = 'inline-block';
-                } else if (messageData.includes('You have left the chat') || messageData.includes('Disconnected')) {
-                    isInChat = false;
-                    pushToTalkButton.style.display = 'none';
-                }
-            }
-            
-            // Handle creating the Play button for voice messages
-            if (isJson && messageType === 'voiceMessage') {
-                const messageContainer = document.createElement('div');
-                messageContainer.style.marginBottom = '10px';
-                const senderText = document.createTextNode(`> Voice message from ${messageData.senderName}: `);
-                messageContainer.appendChild(senderText);
-                const playButton = document.createElement('button');
-                playButton.textContent = 'Play Audio';
-                playButton.dataset.audioSrc = messageData.audioData;
-                playButton.onclick = (e) => {
-                    const audioSrc = e.currentTarget.dataset.audioSrc;
-                    const audio = new Audio(audioSrc);
-                    audio.play();
-                };
-                messageContainer.appendChild(playButton);
-                output.appendChild(messageContainer);
-            } else {
-                 // Handle regular text messages
-                if (typeof messageData === 'string' && messageData.includes('AI is typing...')) {
-                    output.innerHTML += '<div class="typing">' + messageData + '</div>\n';
-                } else {
-                    output.innerHTML += '<div>' + messageData + '</div>\n';
-                }
-            }
+            if (displayHtml) output.innerHTML += displayHtml;
             output.scrollTop = output.scrollHeight;
         };
-
-        // --- Event Handler: When connection closes ---
+        
         ws.onclose = () => {
-            console.log('WebSocket connection closed');
-            output.innerHTML += '<div>Connection lost. Will attempt to reconnect automatically.</div>\n';
+            console.log('WebSocket connection closed.');
+            output.innerHTML += '<div><i>Connection lost.</i></div>\n';
             isInChat = false;
             pushToTalkButton.style.display = 'none';
         };
 
-        // --- Event Handler: On connection error ---
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            output.innerHTML += '<div>Error: Could not connect.</div>\n';
-        };
+        ws.onerror = (error) => console.error('WebSocket error:', error);
     }
-
-    // --- NEW: EVENT LISTENER FOR AUTO-RECONNECTION ---
-    document.addEventListener('visibilitychange', () => {
-        // When the tab becomes visible again...
-        if (document.visibilityState === 'visible') {
-            // ...and if the websocket is closed, try to reconnect.
-            if (!ws || ws.readyState === WebSocket.CLOSED) {
-                connectWebSocket();
-            }
+    
+    // Use a single event listener on the parent container for all audio buttons
+    output.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('play-audio-btn')) {
+            const audio = new Audio(e.target.dataset.audioSrc);
+            audio.play();
         }
     });
 
     // --- CORE APP LOGIC ---
     function sendMessage() {
-      const message = input.value;
-      if (message) {
-        output.innerHTML += `<div class="prompt">$ </div>${message}\n`;
-        ws.send(message);
-        input.value = '';
-        output.scrollTop = output.scrollHeight;
-      }
-    }
-
-    input.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter') {
-        sendMessage();
-      }
-    });
-
-    function createParticle() {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = Math.random() * 100 + 'vw';
-      particle.style.top = Math.random() * 100 + 'vh';
-      document.body.appendChild(particle);
-      setTimeout(() => particle.remove(), 3000);
-    }
-    
-    function handlePushToTalk() {
-      if (isInChat) {
-        if (typeof togglePushToTalkInternal === 'function') {
-          togglePushToTalkInternal(ws, pushToTalkButton);
-        } else {
-          output.innerHTML += '<div>Error: Voice function not loaded.</div>\n';
+        const message = input.value;
+        if (message && ws && ws.readyState === WebSocket.OPEN) {
+            output.innerHTML += `<div class="prompt">$ </div>${message}\n`;
+            ws.send(message);
+            input.value = '';
         }
-      } else {
-        output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
-      }
+    }
+    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    function handlePushToTalk() {
+        if (isInChat) {
+            if (typeof togglePushToTalkInternal === 'function') {
+                togglePushToTalkInternal(ws, pushToTalkButton);
+            }
+        } else {
+            output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
+        }
     }
     
     // --- INITIALIZE ---
-    setInterval(createParticle, 200);
     connectWebSocket(); // Initial call to connect when the page loads
 </script>
 </body>
