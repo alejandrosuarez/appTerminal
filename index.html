@@ -105,7 +105,7 @@
     <div id="output"></div>
     <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
     <button onclick="sendMessage()">Execute</button>
-    <button id="pushToTalk" onclick="togglePushToTalk()" style="display: none;">Push to Talk</button>
+    <button id="pushToTalk" onclick="handlePushToTalk()" style="display: none;">Tap to Talk</button>
   </div>
 
   <script>
@@ -136,8 +136,12 @@
 
     ws.onopen = () => {
       console.log('WebSocket connection opened');
-      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 02:28 PM -05, Monday, June 09, 2025.</div>\n';
-      initializeVoice(ws); // Initialize voice module
+      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 03:00 PM -05, Monday, June 09, 2025.</div>\n';
+      if (typeof initializeVoice === 'function') {
+        initializeVoice(ws); // Initialize voice module only if function exists
+      } else {
+        console.error('initializeVoice function not loaded');
+      }
     };
 
     ws.onmessage = (event) => {
@@ -208,9 +212,14 @@
 
     // Voice Integration
     const pushToTalkButton = document.getElementById('pushToTalk');
-    function togglePushToTalk() {
+    function handlePushToTalk() { // Renamed to avoid conflict
       if (isInChat) { // Only allow if in chat
-        togglePushToTalk(ws, pushToTalkButton);
+        if (typeof togglePushToTalkInternal === 'function') {
+          togglePushToTalkInternal(ws, pushToTalkButton);
+        } else {
+          output.innerHTML += '<div>Error: togglePushToTalkInternal function not loaded.</div>\n';
+          output.scrollTop = output.scrollHeight;
+        }
       } else {
         output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
         output.scrollTop = output.scrollHeight;

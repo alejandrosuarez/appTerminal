@@ -11,14 +11,16 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// Serve static files from the root directory
+app.use(express.static(__dirname));
+
 // Initialize Supabase client with credentials from Render secrets
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Serve a simple HTML page for testing (optional)
+// Serve the index.html file
 app.get('/', (req, res) => {
-  //res.send('<h1>Terminal Simulator</h1><p>Connect via WebSocket at wss://appterminal.onrender.com</p>');
   res.sendFile(__dirname + '/index.html');
 });
 
@@ -26,15 +28,12 @@ app.get('/', (req, res) => {
 function formatQueryResults(data) {
   if (!data || data.length === 0) return 'No results found.';
   if (!Array.isArray(data)) {
-    // Handle single object
     let output = 'Query Result:\n';
     for (const [key, value] of Object.entries(data)) {
       output += `  ${key}: ${value}\n`;
     }
     return output;
   }
-
-  // Handle array of objects (e.g., table rows)
   let output = 'Query Results:\n';
   data.forEach((item, index) => {
     output += `Record ${index + 1}:\n`;
@@ -80,13 +79,11 @@ wss.on('connection', async (ws) => {
       ws.send('Session ended. Goodbye!\n');
       ws.close();
     } else if (input.toLowerCase().startsWith('sql ')) {
-      // Handle SQL command
       const query = input.substring(4).trim();
       if (!query) {
         ws.send('Please provide a valid SQL query after "sql".\n');
         return;
       }
-
       ws.send('AI is typing...\n');
       setTimeout(async () => {
         try {
@@ -95,11 +92,9 @@ wss.on('connection', async (ws) => {
             ws.send(`Error executing SQL query: ${error.message}\n`);
           } else {
             const formattedResults = formatQueryResults(data);
-            // Use natural to analyze intent or structure (basic for now)
             const tokenizer = new natural.WordTokenizer();
             const tokens = tokenizer.tokenize(input);
             const hasTable = tableNames.some(table => tokens.includes(table.toLowerCase()));
-
             let response = formattedResults;
             if (hasTable) {
               response += '\nAI detected a table name. Next time, just say the table (e.g., "properties") to query it!\n';
@@ -109,9 +104,8 @@ wss.on('connection', async (ws) => {
         } catch (err) {
           ws.send(`Unexpected error: ${err.message}\n`);
         }
-      }, 1500); // 1.5-second delay to simulate typing
+      }, 1500);
     } else {
-      // Handle conversational AI with compromise and natural
       ws.send('AI is typing...\n');
       setTimeout(() => {
         const doc = nlp(input);
@@ -119,36 +113,34 @@ wss.on('connection', async (ws) => {
         const isQuestion = doc.questions().found;
         const tokenizer = new natural.WordTokenizer();
         const tokens = tokenizer.tokenize(input.toLowerCase());
-
         let response = '';
         if (isGreeting) {
           response = 'Hello! Nice to meet you. How can I assist you today?\n';
         } else if (isQuestion || tokens.some(token => tableNames.includes(token))) {
-            const tableMatch = tokens.find(token => tableNames.includes(token));
-            if (tableMatch) {
-                // Simple query for the matched table
-                ws.send('AI is typing...\n');
-                setTimeout(async () => {
-                try {
-                    const { data, error } = await supabase.from(tableMatch).select('*');
-                    if (error) {
-                    ws.send(`Error querying ${tableMatch}: ${error.message}\n`);
-                    } else {
-                    const formattedResults = formatQueryResults(data);
-                    ws.send(`Here are the ${tableMatch}:\n${formattedResults}\n`);
-                    }
-                } catch (err) {
-                    ws.send(`Unexpected error: ${err.message}\n`);
+          const tableMatch = tokens.find(token => tableNames.includes(token));
+          if (tableMatch) {
+            ws.send('AI is typing...\n');
+            setTimeout(async () => {
+              try {
+                const { data, error } = await supabase.from(tableMatch).select('*');
+                if (error) {
+                  ws.send(`Error querying ${tableMatch}: ${error.message}\n`);
+                } else {
+                  const formattedResults = formatQueryResults(data);
+                  ws.send(`Here are the ${tableMatch}:\n${formattedResults}\n`);
                 }
-                }, 1500);
-                return; // Exit early to avoid the default response
-            }  
-            response = 'I see you might be asking about data! Use "sql <query>" for now, or soon just say a table name like "properties" to query it.\n';
+              } catch (err) {
+                ws.send(`Unexpected error: ${err.message}\n`);
+              }
+            }, 1500);
+            return;
+          }
+          response = 'I see you might be asking about data! Use "sql <query>" for now, or soon just say a table name like "properties" to query it.\n';
         } else {
           response = `You entered: ${input}. I’m a basic AI—try a greeting like "hi", "sql <query>" (for testing), or type "exit" to quit.\n`;
         }
         ws.send(response);
-      }, 1500); // 1.5-second delay to simulate typing
+      }, 1500);
     }
   });
 
