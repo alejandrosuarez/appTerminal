@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Particles.js CDN with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" onload="initParticles()" onerror="console.error('Particles.js failed to load, falling back to plain background');"></script>
+  <script src="voice.js"></script>
   <style>
     body {
       background: #0a0e14; /* Dark cyberpunk background */
@@ -95,6 +96,8 @@
       50% { opacity: 1; transform: scale(1.5); }
       100% { opacity: 0.3; transform: scale(1); }
     }
+    #pushToTalk { padding: 5px 10px; background-color: #ff4444; color: white; border: none; cursor: pointer; }
+    #pushToTalk.active { background-color: #00cc00; }
   </style>
 </head>
 <body>
@@ -102,6 +105,7 @@
     <div id="output"></div>
     <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
     <button onclick="sendMessage()">Execute</button>
+    <button id="pushToTalk" onclick="togglePushToTalk()">Push to Talk</button>
   </div>
 
   <script>
@@ -192,6 +196,18 @@
       setTimeout(() => particle.remove(), 3000);
     }
     setInterval(createParticle, 200);
+
+    // Voice Integration - Add this block
+    const pushToTalkButton = document.getElementById('pushToTalk');
+    ws.onopen = () => {
+      console.log('WebSocket connection opened');
+      output.innerHTML += '<div>Connected to Terminal Chat Simulator at 07:25 PM -05, Thursday, June 05, 2025.</div>\n';
+      initializeVoice(ws); // Initialize voice module
+    };
+
+    function togglePushToTalk() {
+      togglePushToTalk(ws, pushToTalkButton);
+    }
   </script>
 </body>
 </html>

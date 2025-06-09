@@ -1,6 +1,8 @@
 // chat.js
 const clients = new Map(); // ws => { name, state }
 
+const { handleVoiceMessage } = require('./voice'); // Import voice module
+
 function handleChat(ws, message) {
   const input = message.toString().trim();
   const lowered = input.toLowerCase();
@@ -59,4 +61,5 @@ function removeClient(ws) {
 module.exports = {
   handleChat,
   removeClient,
+  broadcast // Export broadcast for potential use in voice.js
 };
