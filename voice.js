@@ -8,32 +8,51 @@ function initializeVoice(ws) {
     }
 }
 
-function togglePushToTalkInternal(ws, buttonElement) { // Renamed to avoid conflict
+function togglePushToTalkInternal(ws, buttonElement) {
     if (!ws.isRecording) {
         if (ws.mediaRecorder) {
-            ws.mediaRecorder.stream?.getTracks().forEach(track => track.stop()); // Stop previous stream if exists
+            ws.mediaRecorder.stream?.getTracks().forEach(track => track.stop());
         }
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
-                ws.mediaRecorder = new MediaRecorder(stream);
-                ws.audioChunks = []; // Reset chunks
-                ws.mediaRecorder.ondataavailable = event => ws.audioChunks.push(event.data);
+                // Specify a more compatible mimeType if possible
+                const options = { mimeType: 'audio/webm' };
+                try {
+                    ws.mediaRecorder = new MediaRecorder(stream, options);
+                } catch (e) {
+                    console.warn("audio/webm not supported, using browser default.");
+                    ws.mediaRecorder = new MediaRecorder(stream);
+                }
+                
+                ws.audioChunks = [];
+                ws.mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        ws.audioChunks.push(event.data);
+                    }
+                };
+                
                 ws.mediaRecorder.onstop = () => {
                     if (ws.audioChunks.length > 0) {
-                        const audioBlob = new Blob(ws.audioChunks, { type: 'audio/wav' });
+                        // Use the recorder's mimeType to create the Blob correctly
+                        const mimeType = ws.mediaRecorder.mimeType || 'audio/webm';
+                        const audioBlob = new Blob(ws.audioChunks, { type: mimeType });
                         const reader = new FileReader();
+                        
                         reader.onload = function() {
+                            // The reader.result will now be a valid Data URL with the correct type
+                            // e.g., "data:audio/webm;base64,..."
                             ws.send(reader.result);
                         };
                         reader.readAsDataURL(audioBlob);
                     }
                     ws.audioChunks = [];
                     ws.isRecording = false;
-                    ws.mediaRecorder = null; // Clear mediaRecorder
+                    ws.mediaRecorder = null;
                     buttonElement.classList.remove('active');
                     buttonElement.textContent = 'Tap to Talk';
-                    stream.getTracks().forEach(track => track.stop()); // Stop stream
+                    stream.getTracks().forEach(track => track.stop());
                 };
+                
                 ws.mediaRecorder.start();
                 ws.isRecording = true;
                 buttonElement.classList.add('active');
