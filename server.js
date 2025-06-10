@@ -20,6 +20,10 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/about', (req, res) => {
+  res.sendFile(__dirname + '/about.html');
+});
+
 function formatQueryResults(data) {
     // ... (This function remains unchanged)
     if (!data || data.length === 0) return 'No results found.';

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Chat Simulator - Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Light neutral background with muted, complementary accents) -->
+    <!-- Application Structure Plan: A feature-centric, single-page layout with interactive sections. The flow is: Hero -> How It Works (interactive diagram) -> Terminal Commands (simulation) -> Chat Features (interactive demo) -> Tech Stack (visual grid) -> Setup Guide. This structure breaks down the technical README into digestible, interactive modules, prioritizing user engagement and understanding over the linear format of the source document. -->
+    <!-- Visualization & Content Choices: 1. Architecture: HTML/CSS diagram to explain user flow (Goal: Organize, Interaction: Click to show details). 2. Commands: Simulated terminal UI with buttons to demonstrate functionality (Goal: Demonstrate, Interaction: Click to update mock output). 3. Chat Features: Interactive tabs and a mock input field to showcase text, voice, and sound commands in a familiar UI (Goal: Engage, Interaction: Click tabs, simulate input). 4. Tech Stack: Visual grid with hover effects (Goal: Inform, Interaction: Hover for details). No SVG/Mermaid used, adhering to constraints. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .section-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .card {
+            border: 1px solid;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .detail-card {
+            transition: opacity 0.4s ease-in-out;
+        }
+        .lang-btn.active {
+            background-color: #009374 !important;
+            color: white !important;
+        }
+        .dark .lang-btn.active {
+             background-color: #007a61 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-300 antialiased">
+
+    <!-- Header -->
+    <header class="text-center py-12 md:py-16 px-4 bg-white dark:bg-gray-800/50 relative">
+        <div class="absolute top-4 right-4 flex items-center space-x-2">
+            <!-- Language Toggle -->
+            <div id="lang-toggle" class="flex space-x-1 border border-gray-300 dark:border-gray-600 rounded-full p-1">
+                <button data-lang="en" class="lang-btn px-3 py-1 rounded-full text-sm font-semibold transition-colors">EN</button>
+                <button data-lang="es" class="lang-btn px-3 py-1 rounded-full text-sm font-semibold transition-colors">ES</button>
+            </div>
+            <!-- Dark Mode Toggle -->
+            <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
+                <span id="theme-icon-light" class="hidden">☀️</span>
+                <span id="theme-icon-dark" class="hidden">🌙</span>
+            </button>
+        </div>
+        <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight"></h1>
+        <p id="main-subtitle" class="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"></p>
+    </header>
+
+    <main class="container mx-auto px-4 py-12">
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-16">
+            <div class="text-center">
+                <h2 id="how-it-works-title" class="section-title text-gray-900 dark:text-white"></h2>
+                <p id="how-it-works-subtitle" class="section-subtitle text-gray-600 dark:text-gray-400"></p>
+            </div>
+            
+            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Left Column: Navigation -->
+                <div class="md:col-span-1">
+                    <ul id="component-nav" class="space-y-2">
+                        <li><button data-component="user" class="w-full text-left p-4 rounded-lg font-semibold transition-colors">👤 User</button></li>
+                        <li><button data-component="server" class="w-full text-left p-4 rounded-lg font-semibold transition-colors">⚡️ WebSocket Server</button></li>
+                        <li><button data-component="logic" class="w-full text-left p-4 rounded-lg font-semibold transition-colors">💬 Chat & Sound Logic</button></li>
+                        <li><button data-component="supabase" class="w-full text-left p-4 rounded-lg font-semibold transition-colors">🐘 Supabase (Database)</button></li>
+                    </ul>
+                </div>
+
+                <!-- Right Column: Details -->
+                <div class="md:col-span-2">
+                    <div id="component-detail" class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-8 rounded-xl shadow-lg min-h-[300px]">
+                        <!-- Content will be injected by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Terminal Commands Demo -->
+        <section id="terminal-commands" class="py-16">
+            <div class="text-center">
+                <h2 id="terminal-commands-title" class="section-title text-gray-900 dark:text-white"></h2>
+                <p id="terminal-commands-subtitle" class="section-subtitle text-gray-600 dark:text-gray-400"></p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-2xl p-2">
+                <div class="bg-gray-900 dark:bg-black rounded-lg p-6 min-h-[300px] flex flex-col">
+                    <div id="terminal-output" class="flex-grow text-white font-mono text-sm whitespace-pre-wrap overflow-y-auto"></div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-green-400 font-mono mr-2">$</span>
+                        <p id="terminal-input" class="text-gray-400 font-mono flex-grow"></p>
+                    </div>
+                </div>
+                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 justify-center">
+                    <button class="btn font-mono bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" data-command="sql">sql query</button>
+                    <button class="btn font-mono bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" data-command="nlp">nlp query</button>
+                    <button class="btn font-mono bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" data-command="chat">join chat</button>
+                    <button class="btn font-mono bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" data-command="exit">exit</button>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center py-8">
+        <p id="footer-text"></p>
+        <a id="footer-link" href="https://github.com/alejandrosuarez/appTerminal" class="mt-2 inline-block text-teal-300 hover:text-teal-200 transition-colors"></a>
+    </footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const translations = {
+            en: {
+                mainTitle: "Terminal Chat Simulator",
+                mainSubtitle: "An interactive guide to a multi-featured WebSocket application with a Supabase backend, real-time chat, voice messaging, and shared sound commands.",
+                howItWorksTitle: "How It Works",
+                howItWorksSubtitle: "A high-level overview of the application's architecture. Select a component from the list to learn more about its role.",
+                terminalCommandsTitle: "Terminal Commands",
+                terminalCommandsSubtitle: "An interactive simulation of the terminal's capabilities. Click a command to see it in action.",
+                footerText: "Built from the `README.md` of the appTerminal project.",
+                footerLink: "View on GitHub →",
+                components: {
+                    user: { icon: '👤', title: 'User', description: 'The user interacts with the application through a web browser, sending commands or chat messages. All functionality, from database queries to real-time chat, originates from user input.', color: 'teal' },
+                    server: { icon: '⚡️', title: 'WebSocket Server', description: 'The Node.js server maintains a persistent WebSocket connection with the user, handling all incoming requests and broadcasting real-time updates. It acts as the central hub for the application.', color: 'sky' },
+                    logic: { icon: '💬', title: 'Chat & Sound Logic', description: 'Custom modules (`chat.js`, `sound-commands.js`) manage the real-time chat room state, user names, and API calls for the `scream:` feature. This separates business logic from core server operations.', color: 'purple' },
+                    supabase: { icon: '🐘', title: 'Supabase (Database)', description: 'Supabase provides the powerful PostgreSQL database for handling `sql` and NLP-based queries, allowing for powerful data interaction directly from the terminal.', color: 'green' }
+                },
+                terminal: {
+                    welcome1: "Welcome to the terminal simulator!",
+                    welcome2: 'You can use "sql <query>" to run SQL commands.',
+                    inputPlaceholder: "Click a command below...",
+                    commands: {
+                        sql: "sql SELECT * FROM properties",
+                        nlp: "properties",
+                        chat: "chat",
+                        exit: "exit"
+                    },
+                    responses: {
+                        sql: `> Executing SQL query...\n\nQuery Results:\nRecord 1:\n  id: 1\n  location: Downtown\n  details: A cozy apartment...\n---\nRecord 2:\n  id: 2\n  location: Suburbs\n  details: A spacious house...\n---`,
+                        nlp: `> Running NLP query for "properties"...\n\nHere are the properties:\nRecord 1:\n  id: 1\n  location: Downtown\n  details: A cozy apartment...\n---`,
+                        chat: `> Entering chat room...\n\nEnter your guest name:`,
+                        exit: `> Session ended. Goodbye!`
+                    }
+                }
+            },
+            es: {
+                mainTitle: "Simulador de Terminal y Chat",
+                mainSubtitle: "Una guía interactiva de una aplicación WebSocket multifuncional con backend de Supabase, chat en tiempo real, mensajería de voz y comandos de sonido compartidos.",
+                howItWorksTitle: "Cómo Funciona",
+                howItWorksSubtitle: "Un resumen de alto nivel de la arquitectura de la aplicación. Selecciona un componente de la lista para conocer más sobre su función.",
+                terminalCommandsTitle: "Comandos de la Terminal",
+                terminalCommandsSubtitle: "Una simulación interactiva de las capacidades de la terminal. Haz clic en un comando para verlo en acción.",
+                footerText: "Construido a partir del `README.md` del proyecto appTerminal.",
+                footerLink: "Ver en GitHub →",
+                components: {
+                    user: { icon: '👤', title: 'Usuario', description: 'El usuario interactúa con la aplicación a través de un navegador web, enviando comandos o mensajes de chat. Toda la funcionalidad, desde consultas a la base de datos hasta el chat en tiempo real, se origina a partir de la entrada del usuario.', color: 'teal' },
+                    server: { icon: '⚡️', title: 'Servidor WebSocket', description: 'El servidor Node.js mantiene una conexión WebSocket persistente con el usuario, gestionando todas las solicitudes entrantes y transmitiendo actualizaciones en tiempo real. Actúa como el centro neurálgico de la aplicación.', color: 'sky' },
+                    logic: { icon: '💬', title: 'Lógica de Chat y Sonido', description: 'Módulos personalizados (`chat.js`, `sound-commands.js`) gestionan el estado de la sala de chat, los nombres de usuario y las llamadas a la API para la función `scream:`. Esto separa la lógica de negocio de las operaciones principales del servidor.', color: 'purple' },
+                    supabase: { icon: '🐘', title: 'Supabase (Base de Datos)', description: 'Supabase proporciona la potente base de datos PostgreSQL para manejar consultas `sql` y basadas en NLP, permitiendo una poderosa interacción con los datos directamente desde la terminal.', color: 'green' }
+                },
+                terminal: {
+                    welcome1: "¡Bienvenido al simulador de terminal!",
+                    welcome2: 'Puedes usar "sql <consulta>" para ejecutar comandos SQL.',
+                    inputPlaceholder: "Haz clic en un comando abajo...",
+                    commands: {
+                        sql: "sql SELECT * FROM properties",
+                        nlp: "properties",
+                        chat: "chat",
+                        exit: "exit"
+                    },
+                    responses: {
+                        sql: `> Ejecutando consulta SQL...\n\nResultados:\nRegistro 1:\n  id: 1\n  location: Centro\n  details: Un apartamento acogedor...\n---\nRegistro 2:\n  id: 2\n  location: Suburbios\n  details: Una casa espaciosa...\n---`,
+                        nlp: `> Ejecutando consulta NLP para "properties"...\n\nAquí están las propiedades:\nRegistro 1:\n  id: 1\n  location: Centro\n  details: Un apartamento acogedor...\n---`,
+                        chat: `> Entrando a la sala de chat...\n\nIntroduce tu nombre de invitado:`,
+                        exit: `> Sesión terminada. ¡Adiós!`
+                    }
+                }
+            }
+        };
+
+        let currentLang = 'en';
+        let currentComponent = 'user';
+
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const langToggleContainer = document.getElementById('lang-toggle');
+
+        const applyTheme = () => {
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const theme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = theme === 'dark' || (theme === null && systemPrefersDark);
+
+            document.documentElement.classList.toggle('dark', isDark);
+            lightIcon.classList.toggle('hidden', isDark);
+            darkIcon.classList.toggle('hidden', !isDark);
+        };
+
+        const updateContent = (lang) => {
+            currentLang = lang;
+            localStorage.setItem('language', lang);
+            const t = translations[lang];
+
+            document.getElementById('main-title').textContent = t.mainTitle;
+            document.getElementById('main-subtitle').textContent = t.mainSubtitle;
+            document.getElementById('how-it-works-title').textContent = t.howItWorksTitle;
+            document.getElementById('how-it-works-subtitle').textContent = t.howItWorksSubtitle;
+            document.getElementById('terminal-commands-title').textContent = t.terminalCommandsTitle;
+            document.getElementById('terminal-commands-subtitle').textContent = t.terminalCommandsSubtitle;
+            document.getElementById('footer-text').textContent = t.footerText;
+            document.getElementById('footer-link').textContent = t.footerLink;
+
+            const terminalOutput = document.getElementById('terminal-output');
+            terminalOutput.innerHTML = `<p>${t.terminal.welcome1}</p><p>${t.terminal.welcome2}</p>`;
+            document.getElementById('terminal-input').textContent = t.terminal.inputPlaceholder;
+
+            Object.keys(t.components).forEach(key => {
+                document.querySelector(`[data-component="${key}"]`).innerHTML = `${t.components[key].icon} ${t.components[key].title}`;
+            });
+            
+            updateDetailView(currentComponent, lang);
+
+            langToggleContainer.querySelectorAll('.lang-btn').forEach(btn => {
+                 btn.classList.toggle('active', btn.dataset.lang === lang);
+                 btn.classList.toggle('bg-gray-200', btn.dataset.lang !== lang);
+                 btn.classList.toggle('dark:bg-gray-700', btn.dataset.lang !== lang);
+            });
+        };
+        
+        themeToggleBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            applyTheme();
+        });
+        
+        langToggleContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                updateContent(e.target.dataset.lang);
+            }
+        });
+
+        const initLangAndTheme = () => {
+            applyTheme();
+            const savedLang = localStorage.getItem('language');
+            const browserLang = navigator.language.split('-')[0];
+            updateContent(savedLang || (browserLang === 'es' ? 'es' : 'en'));
+        };
+        
+        const componentNav = document.getElementById('component-nav');
+        const detailContainer = document.getElementById('component-detail');
+
+        const updateDetailView = (componentKey, lang = currentLang) => {
+            currentComponent = componentKey;
+            const data = translations[lang].components[componentKey];
+            if (!data) return;
+
+            detailContainer.style.opacity = 0;
+            
+            setTimeout(() => {
+                detailContainer.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <span class="text-4xl mr-4">${data.icon}</span>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">${data.title}</h3>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">${data.description}</p>
+                `;
+                detailContainer.style.opacity = 1;
+            }, 200);
+
+            componentNav.querySelectorAll('button').forEach(btn => {
+                const key = btn.dataset.component;
+                const isActive = key === componentKey;
+                const color = translations[lang].components[key].color;
+                
+                btn.classList.toggle(`bg-${color}-100`, isActive);
+                btn.classList.toggle(`dark:bg-${color}-900/50`, isActive);
+                btn.classList.toggle(`text-${color}-800`, isActive);
+                btn.classList.toggle(`dark:text-${color}-200`, isActive);
+                
+                if (!isActive) {
+                     btn.classList.remove(...Array.from(btn.classList).filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-') || c.startsWith('text-') || c.startsWith('dark:text-')));
+                     btn.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                }
+            });
+        };
+        
+        componentNav.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                updateDetailView(e.target.dataset.component);
+            }
+        });
+        
+        const commandButtons = document.querySelectorAll('[data-command]');
+        commandButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const commandKey = button.dataset.command;
+                const t = translations[currentLang].terminal;
+                const command = t.commands[commandKey];
+                const response = t.responses[commandKey];
+                const terminalOutput = document.getElementById('terminal-output');
+                const terminalInput = document.getElementById('terminal-input');
+
+                terminalInput.textContent = command;
+                terminalOutput.innerHTML += `\n<p><span class="text-green-400">$</span> ${command}</p>`;
+                
+                setTimeout(() => {
+                    terminalOutput.innerHTML += `<p>${response}</p>`;
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    terminalInput.textContent = t.inputPlaceholder;
+                }, 500);
+            });
+        });
+        
+        initLangAndTheme();
+    });
+</script>
+
+</body>
+</html>
