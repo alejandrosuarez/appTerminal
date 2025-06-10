@@ -116,26 +116,25 @@
     const input = document.getElementById('input');
     const pushToTalkButton = document.getElementById('pushToTalk');
     const reconnectButton = document.getElementById('reconnectButton');
+    const soundPlayer = new Audio();
+
     let ws;
     let isInChat = false;
     // --- ADDED: Flag to track if audio has been unlocked by the user ---
     let isAudioUnlocked = false;
 
-    // --- ADDED: Reusable function to unlock audio on iOS ---
     function unlockAudio() {
-        // Only run this function once
-        if (isAudioUnlocked) {
-            return;
-        }
-        // Use the sound you requested for audible feedback
-        const audioUnlock = new Audio('https://www.myinstants.com/media/sounds/bone-crack.mp3');
-        audioUnlock.play().catch(e => console.error("Audio unlock failed but proceeding.", e));
+        if (isAudioUnlocked) return;
+        
+        // Set the source of our shared player to the crack sound and play it
+        soundPlayer.src = 'https://www.myinstants.com/media/sounds/bone-crack.mp3';
+        soundPlayer.play().catch(e => {}); // This action unlocks the player
         isAudioUnlocked = true;
         console.log('Audio context unlocked for autoplay.');
     }
 
     function connectWebSocket() {
-        reconnectButton.style.display = 'none'; // Hide button on connection attempt
+        reconnectButton.style.display = 'none';
         const wsUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? 'ws://localhost:5000'
             : 'wss://appterminal.onrender.com';
@@ -166,10 +165,13 @@
             // This autoplay logic will now work on iOS because the context will be unlocked.
             if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
               console.log('Autoplaying sound:', messageText);
-              new Audio(messageText).play().catch(e => console.error("Autoplay failed:", e));
+              // Set the source of our existing, unlocked player and play it
+              soundPlayer.src = messageText;
+              soundPlayer.play().catch(e => console.error("Autoplay failed:", e));
               return; 
             }
             
+            // This part for recorded voice messages is fine, as it's always tied to a click
             if (messageText.startsWith('data:audio/')) {
                 const messageContainer = document.createElement('div');
                 const playButton = document.createElement('button');
@@ -181,6 +183,7 @@
                 return;
             }
 
+            // The rest of the message handling is unchanged
             if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
                 isInChat = true;
                 pushToTalkButton.style.display = 'inline-block';
