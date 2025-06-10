@@ -118,6 +118,8 @@
     const reconnectButton = document.getElementById('reconnectButton');
     let ws;
     let isInChat = false;
+    // --- ADDED: Flag to track if audio is unlocked ---
+    let isAudioUnlocked = false;
 
     function connectWebSocket() {
         reconnectButton.style.display = 'none'; // Hide button on connection attempt
@@ -146,9 +148,16 @@
                 }
             } catch (e) { /* Not a JSON message, continue */ }
             
-            // Handle voice messages (which are just raw data URLs now)
-            if (event.data.startsWith('data:audio/')) {
-                // This logic is simplified as the server just relays the audio data
+            const messageText = event.data;
+
+            // This autoplay logic will now work on iOS after the first message is sent.
+            if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
+              console.log('Autoplaying sound:', messageText);
+              new Audio(messageText).play().catch(e => console.error("Autoplay failed:", e));
+              return; 
+            }
+            
+            if (messageText.startsWith('data:audio/')) {
                 const messageContainer = document.createElement('div');
                 const playButton = document.createElement('button');
                 playButton.textContent = 'Play Voice Message';
@@ -159,13 +168,6 @@
                 return;
             }
 
-            // Handle all other text messages
-            const messageText = event.data;
-            if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
-              console.log('Autoplaying sound:', messageText);
-              new Audio(messageText).play().catch(e => console.error("Autoplay failed:", e));
-              return; // We're done, don't display the URL as text.
-            }
             if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
                 isInChat = true;
                 pushToTalkButton.style.display = 'inline-block';
@@ -196,6 +198,17 @@
     };
 
     function sendMessage() {
+        // --- ADDED: iOS Audio Unlock Logic ---
+        // This runs only ONCE, on the very first time the user sends a message.
+        if (!isAudioUnlocked) {
+            // A tiny, silent audio file encoded in base64
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+            silentAudio.play().catch(e => {}); // Play and ignore any errors
+            isAudioUnlocked = true;
+            console.log('Audio context unlocked for autoplay on this page.');
+        }
+        // --- END OF ADDITION ---
+
         const message = input.value;
         if (message && ws && ws.readyState === WebSocket.OPEN) {
             output.innerHTML += `<div class="prompt">$ </div>${message}\n`;
