@@ -118,8 +118,21 @@
     const reconnectButton = document.getElementById('reconnectButton');
     let ws;
     let isInChat = false;
-    // --- ADDED: Flag to track if audio is unlocked ---
+    // --- ADDED: Flag to track if audio has been unlocked by the user ---
     let isAudioUnlocked = false;
+
+    // --- ADDED: Reusable function to unlock audio on iOS ---
+    function unlockAudio() {
+        // Only run this function once
+        if (isAudioUnlocked) {
+            return;
+        }
+        // Use the sound you requested for audible feedback
+        const audioUnlock = new Audio('https://www.myinstants.com/media/sounds/bone-crack.mp3');
+        audioUnlock.play().catch(e => console.error("Audio unlock failed but proceeding.", e));
+        isAudioUnlocked = true;
+        console.log('Audio context unlocked for autoplay.');
+    }
 
     function connectWebSocket() {
         reconnectButton.style.display = 'none'; // Hide button on connection attempt
@@ -144,13 +157,13 @@
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'session_established') {
                     sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
-                    return; // Don't display this technical message
+                    return;
                 }
-            } catch (e) { /* Not a JSON message, continue */ }
+            } catch (e) { /* Not JSON, continue */ }
             
             const messageText = event.data;
 
-            // This autoplay logic will now work on iOS after the first message is sent.
+            // This autoplay logic will now work on iOS because the context will be unlocked.
             if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
               console.log('Autoplaying sound:', messageText);
               new Audio(messageText).play().catch(e => console.error("Autoplay failed:", e));
@@ -192,22 +205,11 @@
         };
     }
 
-    // The reconnect button now simply reloads the page.
-    reconnectButton.onclick = () => {
-        window.location.reload();
-    };
+    reconnectButton.onclick = () => { window.location.reload(); };
 
     function sendMessage() {
-        // --- ADDED: iOS Audio Unlock Logic ---
-        // This runs only ONCE, on the very first time the user sends a message.
-        if (!isAudioUnlocked) {
-            // A tiny, silent audio file encoded in base64
-            const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-            silentAudio.play().catch(e => {}); // Play and ignore any errors
-            isAudioUnlocked = true;
-            console.log('Audio context unlocked for autoplay on this page.');
-        }
-        // --- END OF ADDITION ---
+        // Also trigger the unlock here in case the user pastes text without focusing first.
+        unlockAudio();
 
         const message = input.value;
         if (message && ws && ws.readyState === WebSocket.OPEN) {
@@ -216,6 +218,10 @@
             input.value = '';
         }
     }
+    
+    // --- ADDED: Trigger audio unlock on the first tap/focus of the input field ---
+    input.addEventListener('focus', unlockAudio, { once: true });
+    
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     
     function handlePushToTalk() {
@@ -231,5 +237,6 @@
     // Initialize
     connectWebSocket();
 </script>
+
 </body>
 </html>
