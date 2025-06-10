@@ -1,4 +1,5 @@
 const clients = new Map();
+const soundCommands = require('./sound-commands'); 
 
 function broadcast(message, sender) {
     // Send to everyone EXCEPT the original sender
@@ -8,6 +9,8 @@ function broadcast(message, sender) {
         }
     }
 }
+
+soundCommands.initialize(broadcast);
 
 function handleChat(ws, message) {
     let input;
@@ -26,11 +29,21 @@ function handleChat(ws, message) {
         input = message.toString().trim();
     }
 
-    const lowered = input.toLowerCase();
     const client = clients.get(ws);
+
+     // Let the sound handler check the message first.
+    const wasSoundCommand = soundCommands.handleSoundCommand(message, client, ws);
+    if (wasSoundCommand) {
+        return true; // If it was a sound command, we're done.
+    }
+
+    const lowered = input.toLowerCase();
 
     // Voice messages from an active user
     if (client?.state === 'active' && input.startsWith('data:audio/')) {
+      // Send the message back to the sender so they get a "Play" button.
+        ws.send(input);
+        // Broadcast to everyone else.
         broadcast(input, ws);
         return true;
     }
@@ -63,6 +76,11 @@ function handleChat(ws, message) {
     
     // If an active user types anything else, it's a chat message
     if (client?.state === 'active') {
+        // If the message looks like a command for the server, let it pass through.
+        if (input.toLowerCase().startsWith('sql ')) {
+            return false;
+        }
+        // Otherwise, it's a regular chat message.
         broadcast(`${client.name}: ${input}`, ws);
         return true;
     }

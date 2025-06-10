@@ -145,7 +145,7 @@
                     return; // Don't display this technical message
                 }
             } catch (e) { /* Not a JSON message, continue */ }
-
+            
             // Handle voice messages (which are just raw data URLs now)
             if (event.data.startsWith('data:audio/')) {
                 // This logic is simplified as the server just relays the audio data
@@ -161,6 +161,11 @@
 
             // Handle all other text messages
             const messageText = event.data;
+            if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
+              console.log('Autoplaying sound:', messageText);
+              new Audio(messageText).play().catch(e => console.error("Autoplay failed:", e));
+              return; // We're done, don't display the URL as text.
+            }
             if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
                 isInChat = true;
                 pushToTalkButton.style.display = 'inline-block';
