@@ -1,8 +1,21 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Terminal Chat">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Terminal Chat Simulator - A modern terminal interface for chat communication">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- PWA Icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230f172a' rx='40'/><text x='90' y='110' text-anchor='middle' fill='%2322d3ee' font-size='60' font-family='monospace'>$</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230f172a' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%2322d3ee' font-size='14' font-family='monospace'>$</text></svg>">
   <title>Terminal Chat Simulator</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -57,6 +70,7 @@
       background: linear-gradient(135deg, var(--glow-secondary), var(--accent-text));
     }
 
+    /* Mobile-specific optimizations */
     body {
       background: linear-gradient(135deg, var(--primary-bg) 0%, #1a202c 50%, var(--secondary-bg) 100%);
       background-attachment: fixed;
@@ -64,8 +78,16 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
       height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for mobile */
       overflow: hidden;
       position: relative;
+      /* Prevent text selection and zoom on mobile */
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* Animated background particles */
@@ -91,6 +113,7 @@
 
     .container {
       height: 100vh;
+      height: 100dvh; /* Dynamic viewport height */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -253,6 +276,13 @@
       font-size: 0.9rem;
       outline: none;
       padding: 0.5rem 0;
+      /* Enable text selection for input only */
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      /* Prevent zoom on iOS */
+      font-size: max(16px, 0.9rem);
     }
 
     #input::placeholder {
@@ -338,31 +368,100 @@
       font-weight: 600;
     }
 
-    /* Responsive design */
+    /* Mobile-first responsive design */
     @media (max-width: 768px) {
       .container {
-        padding: 1rem;
+        padding: 0.5rem;
+        align-items: stretch;
       }
       
       #terminal {
-        height: 90vh;
-        border-radius: 15px;
+        height: 100vh;
+        height: 100dvh; /* Full dynamic viewport height on mobile */
+        max-height: none;
+        border-radius: 0;
+        border: none;
+        /* Ensure terminal stays in view when keyboard appears */
+        position: relative;
       }
       
       .terminal-header {
         padding: 0.75rem 1rem;
-        border-radius: 15px 15px 0 0;
+        border-radius: 0;
       }
       
       .input-container {
-        padding: 0.75rem 1rem;
-        border-radius: 0 0 15px 15px;
-        flex-wrap: wrap;
+        padding: 1rem;
+        border-radius: 0;
+        /* Sticky input at bottom */
+        position: sticky;
+        bottom: 0;
+        background: var(--secondary-bg);
+        border-top: 2px solid var(--border-color);
+        /* Ensure input container is visible above mobile keyboard */
+        z-index: 1000;
+      }
+      
+      #output {
+        /* Account for mobile keyboard overlay */
+        padding-bottom: 2rem;
+        /* Adjust height to accommodate keyboard */
+        height: calc(100dvh - 160px);
+        overflow-y: auto;
       }
       
       .btn {
         font-size: 0.7rem;
-        padding: 0.4rem 0.8rem;
+        padding: 0.5rem 0.8rem;
+        min-height: 44px; /* iOS touch target minimum */
+        min-width: 44px;
+      }
+      
+      /* Hide particles on mobile for better performance */
+      .particles {
+        display: none;
+      }
+      
+      /* Better mobile typography */
+      #output {
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+      
+      .terminal-title {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Very small screens (iPhone SE, etc.) */
+    @media (max-width: 375px) {
+      .input-container {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      #input {
+        margin-bottom: 0.5rem;
+      }
+    }
+
+    /* Landscape mobile optimization */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .terminal-header {
+        padding: 0.5rem 1rem;
+      }
+      
+      .input-container {
+        padding: 0.5rem 1rem;
+      }
+      
+      #output {
+        height: calc(100dvh - 120px);
       }
     }
 
@@ -624,6 +723,18 @@
     initParticles();
     connectWebSocket();
 </script>
-
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log('✅ Service Worker registrado con éxito:', reg);
+        })
+        .catch(err => {
+          console.error('❌ Fallo al registrar Service Worker:', err);
+        });
+    });
+  }
+</script>
 </body>
 </html>

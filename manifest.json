@@ -1,0 +1,53 @@
+{
+  "name": "Terminal Chat Simulator",
+  "short_name": "Terminal Chat",
+  "description": "A modern terminal interface for chat communication",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["communication", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230f172a' rx='48'/><rect x='24' y='24' width='144' height='144' fill='%231e293b' rx='24'/><text x='96' y='120' text-anchor='middle' fill='%2322d3ee' font-size='48' font-family='monospace'>$</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230f172a' rx='128'/><rect x='64' y='64' width='384' height='384' fill='%231e293b' rx='64'/><text x='256' y='320' text-anchor='middle' fill='%2322d3ee' font-size='128' font-family='monospace'>$</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230f172a' rx='40'/><text x='90' y='110' text-anchor='middle' fill='%2322d3ee' font-size='60' font-family='monospace'>$</text></svg>",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "apple-touch-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Chat",
+      "short_name": "Chat",
+      "description": "Start a new chat session",
+      "url": "/?action=chat",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%2322d3ee' rx='24'/><text x='48' y='64' text-anchor='middle' fill='%230f172a' font-size='32' font-family='monospace'>💬</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}
