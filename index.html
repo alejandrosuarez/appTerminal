@@ -9,6 +9,8 @@
   <!-- Particles.js CDN with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" onload="initParticles()" onerror="console.error('Particles.js failed to load, falling back to plain background');"></script>
   <script src="voice.js"></script>
+  <script src="talk.js"></script>
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=3FtHJch9"></script>
   <style>
     body {
       background: #0a0e14; /* Dark cyberpunk background */
@@ -148,6 +150,7 @@
                 ws.send(JSON.stringify({ type: 'reconnect', name }));
             }
             if (typeof initializeVoice === 'function') initializeVoice(ws);
+            if (typeof initializeTalk === 'function') initializeTalk(ws); // Added for speak command
         };
 
         ws.onmessage = (event) => {

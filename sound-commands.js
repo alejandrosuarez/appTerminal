@@ -61,7 +61,16 @@ function handleSoundCommand(message, client, ws) {
         return true;
     }
 
-    return false; // Not a sound command
+    // Handle "speak:" command
+    if (text.toLowerCase().startsWith('speak:')) {
+        const speakText = text.substring(6).trim();
+        if (speakText && broadcastFunction) {
+            broadcastFunction(`speak: ${speakText}`, ws);
+        }
+        return true;
+    }
+
+    return false;
 }
 
 module.exports = { initialize, handleSoundCommand };
