@@ -12,6 +12,8 @@ This project is a multi-featured, WebSocket-based application that combines a te
 
 - **Shared Sound Commands:** Play sounds for everyone in the chat instantly by either pasting a direct `.mp3` URL or using the `scream:<search_term>` command to query an external sound API.
 
+- **TTS on Chat for broadcast:** Text to Speech function available for chat room for everyone broadcast
+
 - **Persistent Sessions:** The app remembers a user's name for their session. A "Reconnect" button allows for easy session restoration if the connection drops.
 
 - **iOS Audio Unlocking:** Implements a workaround to enable sound autoplay on iOS devices after the first user interaction.
@@ -121,6 +123,12 @@ These commands are available after you type `chat` and enter your name.
 
   * Example: `scream:victory fanfare`
 
+- **Play a Text-to-Speech Message:** Use the `speak:` command to play a text-to-speech message for everyone else, optionally specifying the language with `en:` (English) or `es:` (Spanish).
+
+  * Example: `speak:en: Hello everyone` (uses UK English Female voice)
+  * Example: `speak:es: Hola a todos` (uses Spanish Latin American Male voice)
+  * Example: `speak: Hello` (defaults to UK English Female voice)  
+
 - **`exit-chat`:** Leave the chat room and return to the main terminal mode.
 
 ## Project Structure
@@ -136,6 +144,8 @@ These commands are available after you type `chat` and enter your name.
 - **`voice.js`**: Client-side module for the push-to-talk voice recording feature.
 
 - **`sound-commands.js`**: Server-side module to handle the `.mp3` and `scream:` commands by calling an external API.
+
+- **`talk.js`**: Client-side module to handle the `speak:` command for text-to-speech with language-specific voices.
 
 - **`package.json`**: Lists project dependencies and scripts.
 
