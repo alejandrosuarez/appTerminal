@@ -6,44 +6,371 @@
   <title>Terminal Chat Simulator</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for better typography -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Animate.css for smooth animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  
   <script src="voice.js"></script>
   <script src="talk.js"></script>
   <script src="https://code.responsivevoice.org/responsivevoice.js?key=3FtHJch9"></script>
+  
   <style>
+    :root {
+      --primary-bg: #0f172a;
+      --secondary-bg: #1e293b;
+      --accent-bg: #334155;
+      --terminal-bg: rgba(15, 23, 42, 0.95);
+      --primary-text: #e2e8f0;
+      --accent-text: #22d3ee;
+      --success-text: #10b981;
+      --warning-text: #f59e0b;
+      --error-text: #ef4444;
+      --border-color: #475569;
+      --glow-primary: #22d3ee;
+      --glow-secondary: #a855f7;
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-text) var(--secondary-bg);
+    }
+
+    *::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: var(--secondary-bg);
+      border-radius: 4px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--accent-text), var(--glow-secondary));
+      border-radius: 4px;
+      border: 2px solid var(--secondary-bg);
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, var(--glow-secondary), var(--accent-text));
+    }
+
     body {
-      background: #0a0e14; /* Dark cyberpunk background */
-      color: #00ff99; /* Neon green text */
-      font-family: 'Courier New', monospace; /* Terminal font */
+      background: linear-gradient(135deg, var(--primary-bg) 0%, #1a202c 50%, var(--secondary-bg) 100%);
+      background-attachment: fixed;
+      color: var(--primary-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
       height: 100vh;
       overflow: hidden;
-      transition: all 0.3s ease;
+      position: relative;
     }
-    #terminal {
+
+    /* Animated background particles */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
       height: 100%;
-      padding: 20px;
-      overflow-y: auto;
-      background: rgba(0, 0, 0, 0.9);
-      border: 2px solid #00ff99;
-      box-shadow: 0 0 10px #00ff99, 0 0 20px #00ff33 inset;
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+      animation: backgroundShift 10s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: -1;
     }
+
+    @keyframes backgroundShift {
+      0% { transform: translateX(0) translateY(0); }
+      100% { transform: translateX(-10px) translateY(-10px); }
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    #terminal {
+      width: 100%;
+      max-width: 1200px;
+      height: 80vh;
+      background: var(--terminal-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(34, 211, 238, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      animation: slideInUp 0.6s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, var(--secondary-bg), var(--accent-bg));
+      border-bottom: 1px solid var(--border-color);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .control-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn.close { background: #ff5f57; }
+    .control-btn.minimize { background: #ffbd2e; }
+    .control-btn.maximize { background: #28ca42; }
+
+    .control-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .terminal-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--accent-text);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success-text);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     #output {
-      white-space: pre-wrap; /* Preserve whitespace and newlines from server.js */
-      margin: 0;
-      padding: 0;
-      line-height: 1.4;
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      scroll-behavior: smooth;
     }
+
+    #output div {
+      margin-bottom: 0.5rem;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .prompt {
-      display: inline;
-      color: #00ffcc;
+      color: var(--accent-text);
+      font-weight: 600;
+      text-shadow: 0 0 10px var(--glow-primary);
     }
+
     .typing {
+      color: var(--warning-text);
       animation: blink 0.7s step-end infinite;
-      color: #ff00ff; /* Neon purple for typing */
     }
+
     @keyframes blink {
       50% { opacity: 0; }
     }
+
+    .input-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: var(--secondary-bg);
+      border-top: 1px solid var(--border-color);
+      border-radius: 0 0 20px 20px;
+    }
+
+    .prompt-symbol {
+      color: var(--accent-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 1rem;
+      text-shadow: 0 0 10px var(--glow-primary);
+    }
+
+    #input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--primary-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      outline: none;
+      padding: 0.5rem 0;
+    }
+
+    #input::placeholder {
+      color: #64748b;
+      font-style: italic;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-text), var(--glow-secondary));
+      color: var(--primary-bg);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(34, 211, 238, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--accent-bg);
+      color: var(--primary-text);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-voice {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-voice.active {
+      background: linear-gradient(135deg, var(--success-text), #059669);
+      animation: voicePulse 1s ease-in-out infinite;
+    }
+
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    }
+
+    .btn-voice:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-voice.active:hover {
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Connection status styles */
+    .connection-lost {
+      color: var(--error-text);
+      font-style: italic;
+    }
+
+    .connection-established {
+      color: var(--success-text);
+    }
+
+    /* Welcome message styles */
+    #output div:has-text("Welcome") {
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      #terminal {
+        height: 90vh;
+        border-radius: 15px;
+      }
+      
+      .terminal-header {
+        padding: 0.75rem 1rem;
+        border-radius: 15px 15px 0 0;
+      }
+      
+      .input-container {
+        padding: 0.75rem 1rem;
+        border-radius: 0 0 15px 15px;
+        flex-wrap: wrap;
+      }
+      
+      .btn {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
+
+    /* Custom glitch effect for errors */
+    .glitch-text {
+      animation: glitch 2s linear infinite;
+    }
+
     @keyframes glitch {
       2%, 64% {
         transform: translate(2px, 0) skew(0deg);
@@ -55,62 +382,100 @@
         transform: translate(0, 0) skew(5deg);
       }
     }
-    .glitch {
-      animation: glitch 2s linear infinite;
+
+    /* Particle effects container */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      border-radius: 20px;
     }
-    #input {
-      background: transparent;
-      border: none;
-      color: #00ff99;
-      width: 80%;
-      outline: none;
-      font-family: 'Courier New', monospace;
-    }
-    #input::placeholder {
-      color: #00cc66;
-    }
-    button {
-      background: #00ff99;
-      border: none;
-      padding: 5px 10px;
-      color: #0a0e14;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    button:hover {
-      background: #ff00ff;
-      color: #00ff99;
-      box-shadow: 0 0 15px #ff00ff;
-    }
+
     .particle {
       position: absolute;
       width: 2px;
       height: 2px;
-      background: #00ffcc;
+      background: var(--accent-text);
       border-radius: 50%;
-      animation: pulse 3s infinite;
+      animation: float 6s ease-in-out infinite;
+      opacity: 0.6;
     }
-    @keyframes pulse {
-      0% { opacity: 0.3; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.5); }
-      100% { opacity: 0.3; transform: scale(1); }
+
+    @keyframes float {
+      0%, 100% { 
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.6;
+      }
+      50% { 
+        transform: translateY(-20px) rotate(180deg);
+        opacity: 1;
+      }
     }
-    #pushToTalk { padding: 5px 10px; background-color: #ff4444; color: white; border: none; cursor: pointer; }
-    #pushToTalk.active { background-color: #00cc00; }
   </style>
 </head>
 <body>
-  <div id="terminal" class="glitch">
-    <div id="output"></div>
-    <div class="prompt">$ </div><input type="text" id="input" placeholder="Enter command..." autocomplete="off">
-    <button onclick="sendMessage()">Execute</button>
-    <button id="pushToTalk" onclick="handlePushToTalk()" style="display: none;">Tap to Talk</button>
-    <button id="reconnectButton" style="display: none;">Reconnect</button>
+  <div class="container">
+    <div id="terminal" class="animate__animated animate__fadeInUp">
+      <!-- Terminal Header -->
+      <div class="terminal-header">
+        <div class="terminal-controls">
+          <button class="control-btn close"></button>
+          <button class="control-btn minimize"></button>
+          <button class="control-btn maximize"></button>
+        </div>
+        <div class="terminal-title">
+          <i class="fas fa-terminal"></i>
+          <span>Terminal Chat</span>
+          <div class="status-indicator"></div>
+        </div>
+        <div style="width: 60px;"></div> <!-- Spacer for centering -->
+      </div>
+
+      <!-- Particles Container -->
+      <div class="particles" id="particles"></div>
+
+      <!-- Output Area -->
+      <div id="output"></div>
+
+      <!-- Input Container -->
+      <div class="input-container">
+        <div class="prompt-symbol">$</div>
+        <input type="text" id="input" placeholder="Enter command..." autocomplete="off">
+        <button onclick="sendMessage()" class="btn btn-primary">
+          <i class="fas fa-paper-plane"></i>
+          Execute
+        </button>
+        <button id="pushToTalk" onclick="handlePushToTalk()" class="btn btn-voice" style="display: none;">
+          <i class="fas fa-microphone"></i>
+          <span class="voice-text">Talk</span>
+        </button>
+        <button id="reconnectButton" class="btn btn-secondary" style="display: none;">
+          <i class="fas fa-sync-alt"></i>
+          Reconnect
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
-    function initParticles() { /* ... unchanged ... */ }
+    function initParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 20;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
 
     const output = document.getElementById('output');
     const input = document.getElementById('input');
@@ -141,7 +506,7 @@
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-            output.innerHTML += '<div>Connection established.</div>\n';
+            output.innerHTML += '<div class="connection-established"><i class="fas fa-check-circle"></i> Connection established.</div>\n';
             const userInfo = sessionStorage.getItem('chatUserInfo');
             if (userInfo) {
                 const { name } = JSON.parse(userInfo);
@@ -176,7 +541,8 @@
             if (messageText.startsWith('data:audio/')) {
                 const messageContainer = document.createElement('div');
                 const playButton = document.createElement('button');
-                playButton.textContent = 'Play Voice Message';
+                playButton.textContent = '🎵 Play Voice Message';
+                playButton.className = 'btn btn-secondary';
                 playButton.onclick = () => new Audio(event.data).play();
                 messageContainer.appendChild(playButton);
                 output.appendChild(messageContainer);
@@ -184,28 +550,34 @@
                 return;
             }
 
-            // The rest of the message handling is unchanged
+            // Enhanced message handling with better styling
+            let styledMessage = messageText;
             if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
                 isInChat = true;
-                pushToTalkButton.style.display = 'inline-block';
+                pushToTalkButton.style.display = 'inline-flex';
+                styledMessage = `<span class="connection-established"><i class="fas fa-user-check"></i> ${messageText}</span>`;
             } else if (messageText.includes('You have left the chat')) {
                 isInChat = false;
                 pushToTalkButton.style.display = 'none';
+                styledMessage = `<span class="connection-lost"><i class="fas fa-sign-out-alt"></i> ${messageText}</span>`;
+            } else if (messageText.includes('Connection lost')) {
+                styledMessage = `<span class="connection-lost glitch-text"><i class="fas fa-exclamation-triangle"></i> ${messageText}</span>`;
             }
-            output.innerHTML += `<div>${messageText}</div>\n`;
+            
+            output.innerHTML += `<div>${styledMessage}</div>\n`;
             output.scrollTop = output.scrollHeight;
         };
 
         ws.onclose = () => {
-            output.innerHTML += '<div><i>Connection lost.</i></div>\n';
-            reconnectButton.style.display = 'inline-block'; // Show reconnect button
+            output.innerHTML += '<div class="connection-lost"><i class="fas fa-times-circle"></i> <em>Connection lost.</em></div>\n';
+            reconnectButton.style.display = 'inline-flex'; // Show reconnect button
             isInChat = false;
             pushToTalkButton.style.display = 'none';
         };
 
         ws.onerror = (error) => {
             console.error('WebSocket error:', error);
-            reconnectButton.style.display = 'inline-block';
+            reconnectButton.style.display = 'inline-flex';
         };
     }
 
@@ -217,7 +589,7 @@
 
         const message = input.value;
         if (message && ws && ws.readyState === WebSocket.OPEN) {
-            output.innerHTML += `<div class="prompt">$ </div>${message}\n`;
+            output.innerHTML += `<div><span class="prompt">$ </span>${message}</div>\n`;
             ws.send(message);
             input.value = '';
         }
@@ -232,13 +604,24 @@
         if (isInChat) {
             if (typeof togglePushToTalkInternal === 'function') {
                 togglePushToTalkInternal(ws, pushToTalkButton);
+                // Update button text and icon based on state
+                const voiceText = pushToTalkButton.querySelector('.voice-text');
+                const icon = pushToTalkButton.querySelector('i');
+                if (pushToTalkButton.classList.contains('active')) {
+                    voiceText.textContent = 'Stop';
+                    icon.className = 'fas fa-stop';
+                } else {
+                    voiceText.textContent = 'Talk';
+                    icon.className = 'fas fa-microphone';
+                }
             }
         } else {
-            output.innerHTML += '<div>Please join the chat with "chat" first.</div>\n';
+            output.innerHTML += '<div class="connection-lost"><i class="fas fa-exclamation-circle"></i> Please join the chat with "chat" first.</div>\n';
         }
     }
     
-    // Initialize
+    // Initialize particles and connect
+    initParticles();
     connectWebSocket();
 </script>
 
