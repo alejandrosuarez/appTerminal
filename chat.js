@@ -1,13 +1,35 @@
 const clients = new Map();
 const soundCommands = require('./sound-commands'); 
 
-function broadcast(message, sender) {
-    // Send to everyone EXCEPT the original sender
+function broadcast(message, sender, chatId = null) {
+    if (chatId) {
+        const request = require('./request');
+        const roomClients = request.getClientsForChatId(chatId);
+        if (roomClients) {
+            console.log(`Broadcasting to chatId ${chatId}: ${message}. Clients: ${roomClients.size}`);
+            for (const [clientWs] of roomClients.entries()) {
+                if (clientWs !== sender && clientWs.readyState === 1) {
+                    console.log(`Sending to client in chatId ${chatId}`);
+                    clientWs.send(message);
+                }
+            }
+        } else {
+            console.log(`No clients found for chatId ${chatId}`);
+        }
+        return;
+    }
+
+    console.log(`Broadcasting to main chat: ${message}`);
     for (const [clientWs] of clients.entries()) {
         if (clientWs !== sender && clientWs.readyState === 1) {
             clientWs.send(message);
         }
     }
+}
+
+// Expose clients for request.js to use in broadcasting
+function getClients() {
+    return clients;
 }
 
 soundCommands.initialize(broadcast);
@@ -97,4 +119,4 @@ function removeClient(ws) {
   }
 }
 
-module.exports = { handleChat, removeClient };
+module.exports = { handleChat, removeClient, broadcast, getClients };

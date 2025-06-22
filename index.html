@@ -598,87 +598,94 @@
     }
 
     function connectWebSocket() {
-        reconnectButton.style.display = 'none';
-        const wsUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? 'ws://localhost:5000'
-            : 'wss://appterminal.onrender.com';
-        ws = new WebSocket(wsUrl);
+      reconnectButton.style.display = 'none';
+      const urlParams = new URLSearchParams(window.location.search);
+      const chatId = urlParams.get('chatId');
+      const name = urlParams.get('name');
+      let wsUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? 'ws://localhost:5050'
+          : 'wss://appterminal.onrender.com';
+      if (chatId) {
+          wsUrl += `?chatId=${encodeURIComponent(chatId)}`;
+          if (name) wsUrl += `&name=${encodeURIComponent(name)}`;
+      }
+      ws = new WebSocket(wsUrl);
 
-        ws.onopen = () => {
-            output.innerHTML += '<div class="connection-established"><i class="fas fa-check-circle"></i> Connection established.</div>\n';
-            const userInfo = sessionStorage.getItem('chatUserInfo');
-            if (userInfo) {
-                const { name } = JSON.parse(userInfo);
-                ws.send(JSON.stringify({ type: 'reconnect', name }));
-            }
-            if (typeof initializeVoice === 'function') initializeVoice(ws);
-            if (typeof initializeTalk === 'function') initializeTalk(ws); // Added for speak command
-        };
+      ws.onopen = () => {
+          output.innerHTML += '<div class="connection-established"><i class="fas fa-check-circle"></i> Connection established.</div>\n';
+          const userInfo = sessionStorage.getItem('chatUserInfo');
+          if (userInfo && !chatId) {
+              const { name } = JSON.parse(userInfo);
+              ws.send(JSON.stringify({ type: 'reconnect', name }));
+          }
+          if (typeof initializeVoice === 'function') initializeVoice(ws);
+          if (typeof initializeTalk === 'function') initializeTalk(ws); // Added for speak command
+      };
 
-        ws.onmessage = (event) => {
-            // Handle session saving
-            try {
-                const msg = JSON.parse(event.data);
-                if (msg.type === 'session_established') {
-                    sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
-                    return;
-                }
-            } catch (e) { /* Not JSON, continue */ }
-            
-            const messageText = event.data;
+      ws.onmessage = (event) => {
+          // Handle session saving
+          try {
+              const msg = JSON.parse(event.data);
+              if (msg.type === 'session_established') {
+                  sessionStorage.setItem('chatUserInfo', JSON.stringify({ name: msg.name }));
+                  return;
+              }
+          } catch (e) { /* Not JSON, continue */ }
+          
+          const messageText = event.data;
 
-            // This autoplay logic will now work on iOS because the context will be unlocked.
-            if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
+          // This autoplay logic will now work on iOS because the context will be unlocked.
+          if (typeof messageText === 'string' && messageText.startsWith('http') && messageText.endsWith('.mp3')) {
               console.log('Autoplaying sound:', messageText);
               // Set the source of our existing, unlocked player and play it
               soundPlayer.src = messageText;
               soundPlayer.play().catch(e => console.error("Autoplay failed:", e));
               return; 
-            }
-            
-            // This part for recorded voice messages is fine, as it's always tied to a click
-            if (messageText.startsWith('data:audio/')) {
-                const messageContainer = document.createElement('div');
-                const playButton = document.createElement('button');
-                playButton.textContent = '🎵 Play Voice Message';
-                playButton.className = 'btn btn-secondary';
-                playButton.onclick = () => new Audio(event.data).play();
-                messageContainer.appendChild(playButton);
-                output.appendChild(messageContainer);
-                output.scrollTop = output.scrollHeight;
-                return;
-            }
+          }
+          
+          // This part for recorded voice messages is fine, as it's always tied to a click
+          if (messageText.startsWith('data:audio/')) {
+              const messageContainer = document.createElement('div');
+              const playButton = document.createElement('button');
+              playButton.textContent = '🎵 Play Voice Message';
+              playButton.className = 'btn btn-secondary';
+              playButton.onclick = () => new Audio(event.data).play();
+              messageContainer.appendChild(playButton);
+              output.appendChild(messageContainer);
+              output.scrollTop = output.scrollHeight;
+              return;
+          }
 
-            // Enhanced message handling with better styling
-            let styledMessage = messageText;
-            if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
-                isInChat = true;
-                pushToTalkButton.style.display = 'inline-flex';
-                styledMessage = `<span class="connection-established"><i class="fas fa-user-check"></i> ${messageText}</span>`;
-            } else if (messageText.includes('You have left the chat')) {
-                isInChat = false;
-                pushToTalkButton.style.display = 'none';
-                styledMessage = `<span class="connection-lost"><i class="fas fa-sign-out-alt"></i> ${messageText}</span>`;
-            } else if (messageText.includes('Connection lost')) {
-                styledMessage = `<span class="connection-lost glitch-text"><i class="fas fa-exclamation-triangle"></i> ${messageText}</span>`;
-            }
-            
-            output.innerHTML += `<div>${styledMessage}</div>\n`;
-            output.scrollTop = output.scrollHeight;
-        };
+          // Enhanced message handling with better styling
+          let styledMessage = messageText;
+          if (messageText.includes('Welcome,') || messageText.includes('Welcome back,')) {
+              isInChat = true;
+              pushToTalkButton.style.display = 'inline-flex';
+              styledMessage = `<span class="connection-established"><i class="fas fa-user-check"></i> ${messageText}</span>`;
+          } else if (messageText.includes('You have left the chat')) {
+              isInChat = false;
+              pushToTalkButton.style.display = 'none';
+              styledMessage = `<span class="connection-lost"><i class="fas fa-sign-out-alt"></i> ${messageText}</span>`;
+          } else if (messageText.includes('Connection lost')) {
+              styledMessage = `<span class="connection-lost glitch-text"><i class="fas fa-exclamation-triangle"></i> ${messageText}</span>`;
+          }
+          
+          output.innerHTML += `<div>${styledMessage}</div>\n`;
+          output.scrollTop = output.scrollHeight;
+      };
 
-        ws.onclose = () => {
-            output.innerHTML += '<div class="connection-lost"><i class="fas fa-times-circle"></i> <em>Connection lost.</em></div>\n';
-            reconnectButton.style.display = 'inline-flex'; // Show reconnect button
-            isInChat = false;
-            pushToTalkButton.style.display = 'none';
-        };
+      ws.onclose = () => {
+          output.innerHTML += '<div class="connection-lost"><i class="fas fa-times-circle"></i> <em>Connection lost.</em></div>\n';
+          reconnectButton.style.display = 'inline-flex'; // Show reconnect button
+          isInChat = false;
+          pushToTalkButton.style.display = 'none';
+      };
 
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            reconnectButton.style.display = 'inline-flex';
-        };
-    }
+      ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          reconnectButton.style.display = 'inline-flex';
+      };
+  }
 
     reconnectButton.onclick = () => { window.location.reload(); };
 
