@@ -394,6 +394,108 @@
       50% { opacity: 0.3; }
     }
 
+    /* Voice message container with play count */
+    .voice-message-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      background: rgba(34, 211, 238, 0.1);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      border-radius: 12px;
+      margin: 0.5rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .voice-message-container::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(135deg, var(--accent-text), var(--glow-secondary));
+      border-radius: 0 2px 2px 0;
+    }
+
+    .voice-play-button {
+      background: linear-gradient(135deg, var(--accent-text), var(--glow-secondary));
+      color: var(--primary-bg);
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+
+    .voice-play-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(34, 211, 238, 0.3);
+    }
+
+    .voice-play-button.playing {
+      background: linear-gradient(135deg, var(--success-text), #059669);
+      animation: playingPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes playingPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
+
+    .play-count-badge {
+      background: linear-gradient(135deg, var(--warning-text), #d97706);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      min-width: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      animation: countBounce 0.3s ease-out;
+    }
+
+    @keyframes countBounce {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .play-count-badge.new {
+      animation: countBounce 0.3s ease-out, newBadgeGlow 2s ease-in-out;
+    }
+
+    @keyframes newBadgeGlow {
+      0%, 100% { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+    }
+
+    .voice-message-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .voice-message-sender {
+      font-size: 0.8rem;
+      color: var(--accent-text);
+      font-weight: 500;
+    }
+
+    .voice-message-time {
+      font-size: 0.7rem;
+      color: #64748b;
+      font-style: italic;
+    }
+
     /* Connection status styles */
     .connection-lost {
       color: var(--error-text);
@@ -627,6 +729,9 @@
     let isInChat = false;
     // --- Enhanced audio management for walkie-talkie sounds ---
     let isAudioUnlocked = false;
+    // --- Audio message tracking system ---
+    let audioMessageCounter = 0;
+    const audioPlayCounts = new Map();
 
     async function unlockAudio() {
         if (isAudioUnlocked) return;
@@ -694,16 +799,9 @@
               return; 
           }
           
-          // This part for recorded voice messages is fine, as it's always tied to a click
+          // Enhanced voice message handling with play count tracking
           if (messageText.startsWith('data:audio/')) {
-              const messageContainer = document.createElement('div');
-              const playButton = document.createElement('button');
-              playButton.textContent = '🎵 Play Voice Message';
-              playButton.className = 'btn btn-secondary';
-              playButton.onclick = () => new Audio(event.data).play();
-              messageContainer.appendChild(playButton);
-              output.appendChild(messageContainer);
-              output.scrollTop = output.scrollHeight;
+              createVoiceMessageWithPlayCount(event.data);
               return;
           }
 
@@ -811,6 +909,104 @@
             }
         }
     });
+    
+    // Create voice message with play count tracking
+    function createVoiceMessageWithPlayCount(audioData) {
+        audioMessageCounter++;
+        const messageId = `voice-msg-${audioMessageCounter}`;
+        const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Initialize play count for this message
+        audioPlayCounts.set(messageId, 0);
+        
+        // Create the voice message container
+        const messageContainer = document.createElement('div');
+        messageContainer.className = 'voice-message-container';
+        messageContainer.id = messageId;
+        
+        // Create play button
+        const playButton = document.createElement('button');
+        playButton.className = 'voice-play-button';
+        playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+        
+        // Create message info
+        const messageInfo = document.createElement('div');
+        messageInfo.className = 'voice-message-info';
+        messageInfo.innerHTML = `
+            <div class="voice-message-sender">🎙️ Voice Message</div>
+            <div class="voice-message-time">${currentTime}</div>
+        `;
+        
+        // Create play count badge
+        const playCountBadge = document.createElement('div');
+        playCountBadge.className = 'play-count-badge';
+        playCountBadge.textContent = '0';
+        
+        // Add click handler for play button
+        playButton.onclick = async () => {
+            const currentCount = audioPlayCounts.get(messageId) || 0;
+            const newCount = currentCount + 1;
+            audioPlayCounts.set(messageId, newCount);
+            
+            // Update play count badge with animation
+            playCountBadge.textContent = `×${newCount}`;
+            playCountBadge.classList.add('new');
+            setTimeout(() => playCountBadge.classList.remove('new'), 2000);
+            
+            // Update button state to playing
+            playButton.classList.add('playing');
+            playButton.innerHTML = '<i class="fas fa-volume-up"></i> Playing...';
+            
+            // Play the audio
+            const audio = new Audio(audioData);
+            
+            // Play walkie-talkie start sound first
+            if (window.walkieSounds) {
+                window.walkieSounds.playStartTalk();
+            }
+            
+            // Play the voice message after a short delay
+            setTimeout(() => {
+                audio.play().catch(e => console.error("Audio playback failed:", e));
+            }, 200);
+            
+            // Handle audio end
+            audio.onended = () => {
+                playButton.classList.remove('playing');
+                playButton.innerHTML = '<i class="fas fa-play"></i> Replay';
+                
+                // Play walkie-talkie end sound
+                if (window.walkieSounds) {
+                    window.walkieSounds.playEndTalk();
+                }
+            };
+            
+            // Handle audio error
+            audio.onerror = () => {
+                playButton.classList.remove('playing');
+                playButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                setTimeout(() => {
+                    playButton.innerHTML = '<i class="fas fa-play"></i> Retry';
+                }, 2000);
+            };
+        };
+        
+        // Assemble the message container
+        messageContainer.appendChild(playButton);
+        messageContainer.appendChild(messageInfo);
+        messageContainer.appendChild(playCountBadge);
+        
+        // Add to output with animation
+        output.appendChild(messageContainer);
+        output.scrollTop = output.scrollHeight;
+        
+        // Auto-play the first time (with user interaction already established)
+        setTimeout(() => {
+            if (isAudioUnlocked) {
+                playButton.click();
+            }
+        }, 500);
+    }
     
     // Initialize particles and connect
     initParticles();
