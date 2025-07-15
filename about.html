@@ -139,6 +139,82 @@
                 </div>
             </div>
         </section>
+
+        <!-- Chat Features Section -->
+        <section id="chat-features" class="py-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
+            <div class="text-center">
+                <h2 id="chat-features-title" class="section-title text-gray-900 dark:text-white"></h2>
+                <p id="chat-features-subtitle" class="section-subtitle text-gray-600 dark:text-gray-400"></p>
+            </div>
+            
+            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Walkie-Talkie Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🎙️</div>
+                        <h3 id="walkie-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="walkie-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Voice Messages Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🎵</div>
+                        <h3 id="voice-messages-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="voice-messages-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Private Chat Rooms Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🔒</div>
+                        <h3 id="private-chat-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="private-chat-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Sound Commands Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🔊</div>
+                        <h3 id="sound-commands-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="sound-commands-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Text-to-Speech Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🗣️</div>
+                        <h3 id="tts-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="tts-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- UX Improvements Feature -->
+                <div class="card bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">🎯</div>
+                        <h3 id="ux-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+                    </div>
+                    <ul id="ux-features" class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Content will be injected by JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </section>
         
     </main>
 
@@ -152,13 +228,65 @@
         const translations = {
             en: {
                 mainTitle: "Terminal Chat Simulator",
-                mainSubtitle: "An interactive guide to a multi-featured WebSocket application with a Supabase backend, real-time chat, voice messaging, and shared sound commands.",
+                mainSubtitle: "An interactive guide to a multi-featured WebSocket application with Supabase backend, walkie-talkie push-to-talk, voice message replay system, private chat rooms, and shared sound commands.",
                 howItWorksTitle: "How It Works",
                 howItWorksSubtitle: "A high-level overview of the application's architecture. Select a component from the list to learn more about its role.",
                 terminalCommandsTitle: "Terminal Commands",
                 terminalCommandsSubtitle: "An interactive simulation of the terminal's capabilities. Click a command to see it in action.",
+                chatFeaturesTitle: "Chat Features",
+                chatFeaturesSubtitle: "Explore the advanced real-time communication features including walkie-talkie voice messaging, sound commands, and private chat rooms.",
                 footerText: "Built from the `README.md` of the appTerminal project.",
                 footerLink: "View on GitHub →",
+                chatFeatures: {
+                    walkieTitle: "Walkie-Talkie Push-to-Talk",
+                    walkieFeatures: [
+                        "• Authentic beep sounds (start/stop transmission)",
+                        "• Click red button or hold SPACEBAR to record",
+                        "• Visual recording indicator with animations",
+                        "• Cached microphone permissions (no repeated popups)",
+                        "• Cross-platform audio compatibility"
+                    ],
+                    voiceMessagesTitle: "Voice Message Replay System",
+                    voiceMessagesFeatures: [
+                        "• Play count tracking (×1, ×2, ×3...)",
+                        "• Auto-play for recipients, manual for senders",
+                        "• Beautiful voice message containers",
+                        "• Animated play count badges with glow effects",
+                        "• Smart sender/recipient identification"
+                    ],
+                    privateChatTitle: "Private Chat Rooms",
+                    privateChatFeatures: [
+                        "• Isolated chat rooms via custom URLs",
+                        "• Format: /request?chatId=room&name=user",
+                        "• Full feature parity with main chat",
+                        "• Voice messages and sound commands work",
+                        "• Complete privacy and separation"
+                    ],
+                    soundCommandsTitle: "Sound Commands",
+                    soundCommandsFeatures: [
+                        "• Direct .mp3 URLs play instantly",
+                        "• scream: command searches sound library",
+                        "• Sounds broadcast to all chat participants",
+                        "• Works in both main and private chats",
+                        "• External API integration for sound effects"
+                    ],
+                    ttsTitle: "Text-to-Speech",
+                    ttsFeatures: [
+                        "• speak: command for voice synthesis",
+                        "• Multi-language support (EN/ES)",
+                        "• Language-specific voices and accents",
+                        "• Broadcast TTS to all participants",
+                        "• Natural voice quality"
+                    ],
+                    uxTitle: "UX Improvements",
+                    uxFeatures: [
+                        "• No repeated microphone permission requests",
+                        "• Smart auto-play behavior for voice messages",
+                        "• Enhanced error handling and debugging",
+                        "• Mobile-optimized touch interactions",
+                        "• Session persistence and reconnection"
+                    ]
+                },
                 components: {
                     user: { icon: '👤', title: 'User', description: 'The user interacts with the application through a web browser, sending commands or chat messages. All functionality, from database queries to real-time chat, originates from user input.', color: 'teal' },
                     server: { icon: '⚡️', title: 'WebSocket Server', description: 'The Node.js server maintains a persistent WebSocket connection with the user, handling all incoming requests and broadcasting real-time updates. It acts as the central hub for the application.', color: 'sky' },
@@ -190,8 +318,60 @@
                 howItWorksSubtitle: "Un resumen de alto nivel de la arquitectura de la aplicación. Selecciona un componente de la lista para conocer más sobre su función.",
                 terminalCommandsTitle: "Comandos de la Terminal",
                 terminalCommandsSubtitle: "Una simulación interactiva de las capacidades de la terminal. Haz clic en un comando para verlo en acción.",
+                chatFeaturesTitle: "Características del Chat",
+                chatFeaturesSubtitle: "Explora las características avanzadas de comunicación en tiempo real incluyendo mensajería de voz tipo walkie-talkie, comandos de sonido y salas de chat privadas.",
                 footerText: "Construido a partir del `README.md` del proyecto appTerminal.",
                 footerLink: "Ver en GitHub →",
+                chatFeatures: {
+                    walkieTitle: "Walkie-Talkie Push-to-Talk",
+                    walkieFeatures: [
+                        "• Sonidos de beep auténticos (inicio/fin de transmisión)",
+                        "• Clic en botón rojo o mantener ESPACIO para grabar",
+                        "• Indicador visual de grabación con animaciones",
+                        "• Permisos de micrófono en caché (sin popups repetidos)",
+                        "• Compatibilidad de audio multiplataforma"
+                    ],
+                    voiceMessagesTitle: "Sistema de Reproducción de Mensajes de Voz",
+                    voiceMessagesFeatures: [
+                        "• Seguimiento de conteo de reproducciones (×1, ×2, ×3...)",
+                        "• Auto-reproducción para destinatarios, manual para remitentes",
+                        "• Contenedores hermosos para mensajes de voz",
+                        "• Insignias de conteo animadas con efectos de brillo",
+                        "• Identificación inteligente de remitente/destinatario"
+                    ],
+                    privateChatTitle: "Salas de Chat Privadas",
+                    privateChatFeatures: [
+                        "• Salas de chat aisladas vía URLs personalizadas",
+                        "• Formato: /request?chatId=sala&name=usuario",
+                        "• Paridad completa de características con chat principal",
+                        "• Mensajes de voz y comandos de sonido funcionan",
+                        "• Privacidad y separación completas"
+                    ],
+                    soundCommandsTitle: "Comandos de Sonido",
+                    soundCommandsFeatures: [
+                        "• URLs .mp3 directas se reproducen instantáneamente",
+                        "• Comando scream: busca en biblioteca de sonidos",
+                        "• Sonidos se transmiten a todos los participantes del chat",
+                        "• Funciona en chats principales y privados",
+                        "• Integración con API externa para efectos de sonido"
+                    ],
+                    ttsTitle: "Texto a Voz",
+                    ttsFeatures: [
+                        "• Comando speak: para síntesis de voz",
+                        "• Soporte multiidioma (EN/ES)",
+                        "• Voces y acentos específicos por idioma",
+                        "• Transmisión de TTS a todos los participantes",
+                        "• Calidad de voz natural"
+                    ],
+                    uxTitle: "Mejoras de UX",
+                    uxFeatures: [
+                        "• Sin solicitudes repetidas de permisos de micrófono",
+                        "• Comportamiento inteligente de auto-reproducción para mensajes de voz",
+                        "• Manejo mejorado de errores y depuración",
+                        "• Interacciones táctiles optimizadas para móviles",
+                        "• Persistencia de sesión y reconexión"
+                    ]
+                },
                 components: {
                     user: { icon: '👤', title: 'Usuario', description: 'El usuario interactúa con la aplicación a través de un navegador web, enviando comandos o mensajes de chat. Toda la funcionalidad, desde consultas a la base de datos hasta el chat en tiempo real, se origina a partir de la entrada del usuario.', color: 'teal' },
                     server: { icon: '⚡️', title: 'Servidor WebSocket', description: 'El servidor Node.js mantiene una conexión WebSocket persistente con el usuario, gestionando todas las solicitudes entrantes y transmitiendo actualizaciones en tiempo real. Actúa como el centro neurálgico de la aplicación.', color: 'sky' },
@@ -247,8 +427,29 @@
             document.getElementById('how-it-works-subtitle').textContent = t.howItWorksSubtitle;
             document.getElementById('terminal-commands-title').textContent = t.terminalCommandsTitle;
             document.getElementById('terminal-commands-subtitle').textContent = t.terminalCommandsSubtitle;
+            document.getElementById('chat-features-title').textContent = t.chatFeaturesTitle;
+            document.getElementById('chat-features-subtitle').textContent = t.chatFeaturesSubtitle;
             document.getElementById('footer-text').textContent = t.footerText;
             document.getElementById('footer-link').textContent = t.footerLink;
+
+            // Update chat features content
+            document.getElementById('walkie-title').textContent = t.chatFeatures.walkieTitle;
+            document.getElementById('walkie-features').innerHTML = t.chatFeatures.walkieFeatures.map(feature => `<li>${feature}</li>`).join('');
+            
+            document.getElementById('voice-messages-title').textContent = t.chatFeatures.voiceMessagesTitle;
+            document.getElementById('voice-messages-features').innerHTML = t.chatFeatures.voiceMessagesFeatures.map(feature => `<li>${feature}</li>`).join('');
+            
+            document.getElementById('private-chat-title').textContent = t.chatFeatures.privateChatTitle;
+            document.getElementById('private-chat-features').innerHTML = t.chatFeatures.privateChatFeatures.map(feature => `<li>${feature}</li>`).join('');
+            
+            document.getElementById('sound-commands-title').textContent = t.chatFeatures.soundCommandsTitle;
+            document.getElementById('sound-commands-features').innerHTML = t.chatFeatures.soundCommandsFeatures.map(feature => `<li>${feature}</li>`).join('');
+            
+            document.getElementById('tts-title').textContent = t.chatFeatures.ttsTitle;
+            document.getElementById('tts-features').innerHTML = t.chatFeatures.ttsFeatures.map(feature => `<li>${feature}</li>`).join('');
+            
+            document.getElementById('ux-title').textContent = t.chatFeatures.uxTitle;
+            document.getElementById('ux-features').innerHTML = t.chatFeatures.uxFeatures.map(feature => `<li>${feature}</li>`).join('');
 
             const terminalOutput = document.getElementById('terminal-output');
             terminalOutput.innerHTML = `<p>${t.terminal.welcome1}</p><p>${t.terminal.welcome2}</p>`;

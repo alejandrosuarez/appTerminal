@@ -8,15 +8,21 @@ This project is a multi-featured, WebSocket-based application that combines a te
 
 - **Guest Chat System:** Users can join a chat room, set a guest name, and communicate with others.
 
-- **Push-to-Talk Voice Messaging:** Once in the chat, users can record and send voice messages that others can play on demand.
+- **🎙️ Walkie-Talkie Push-to-Talk:** Advanced voice messaging system with authentic walkie-talkie sound effects (beep on start, double-beep on stop), visual recording indicators, and keyboard shortcuts (hold SPACEBAR).
+
+- **🎵 Creative Voice Message Replay:** Voice messages feature play count tracking (×1, ×2, ×3...), auto-play for recipients (but not senders), and beautiful UI containers with animated badges.
+
+- **🔒 Private Chat Rooms:** Create isolated chat rooms via `/request?chatId=yourroom&name=yourname` URLs with full feature parity including voice messages and sound commands.
 
 - **Shared Sound Commands:** Play sounds for everyone in the chat instantly by either pasting a direct `.mp3` URL or using the `scream:<search_term>` command to query an external sound API.
 
-- **TTS on Chat for broadcast:** Text to Speech function available for chat room for everyone broadcast
+- **TTS on Chat for broadcast:** Text to Speech function available for chat room for everyone broadcast with language-specific voices.
+
+- **🎯 Enhanced UX:** Cached microphone permissions (no repeated popups), smart auto-play behavior, and comprehensive error handling.
 
 - **Persistent Sessions:** The app remembers a user's name for their session. A "Reconnect" button allows for easy session restoration if the connection drops.
 
-- **iOS Audio Unlocking:** Implements a workaround to enable sound autoplay on iOS devices after the first user interaction.
+- **Cross-Platform Audio:** Advanced audio context management with iOS/mobile browser compatibility and autoplay unlocking.
 
 - **NLP-Powered Queries:** Interprets natural language to query database tables.
 
@@ -113,7 +119,15 @@ These commands are available after you type `chat` and enter your name.
 
 - **Send a Text Message:** Type any text and press Enter.
 
-- **Send a Voice Message:** Click and hold the "Tap to Talk" button to record, then release to send.
+- **🎙️ Send a Voice Message (Walkie-Talkie):** 
+  * **Click Method:** Click the red microphone button to start recording, click again to stop
+  * **Keyboard Method:** Hold SPACEBAR to record, release to send (hands-free operation)
+  * **Features:** Authentic beep sounds, visual recording indicator, cached microphone permissions
+
+- **🎵 Voice Message Playback:**
+  * **Auto-play:** Recipients hear voice messages automatically once
+  * **Manual Replay:** Click "Replay" button to hear again (increments play count: ×1, ×2, ×3...)
+  * **Sender Experience:** Your own messages don't auto-play but can be manually replayed
 
 - **Play a Sound via URL:** Paste a direct link to an `.mp3` file and press Enter. The sound will autoplay for everyone else.
 
@@ -131,19 +145,32 @@ These commands are available after you type `chat` and enter your name.
 
 - **`exit-chat`:** Leave the chat room and return to the main terminal mode.
 
+### 🔒 Private Chat Rooms
+
+Create isolated chat rooms with custom URLs:
+
+- **URL Format:** `http://localhost:5000/request?chatId=yourroom&name=yourname`
+- **Features:** All chat features work in private rooms (voice messages, sound commands, etc.)
+- **Isolation:** Private rooms are completely separate from the main chat
+- **Example:** `http://localhost:5000/request?chatId=team-meeting&name=Alice`
+
 ## Project Structure
 
 - **`server.js`**: Main application file: Express server, WebSocket setup, Supabase client, and terminal command handling. It also serves the `about.html` page.
 
-- **`index.html`**: The main terminal and chat front-end user interface.
+- **`index.html`**: The main terminal and chat front-end user interface with walkie-talkie features and voice message replay system.
 
-- **`about.html`**: A separate, single-page interactive guide explaining the project's features.
+- **`about.html`**: A separate, single-page interactive guide explaining the project's features with bilingual support.
 
-- **`chat.js`**: Server-side module to manage the chat room, users, and messages.
+- **`chat.js`**: Server-side module to manage the chat room, users, and messages with session persistence.
 
-- **`voice.js`**: Client-side module for the push-to-talk voice recording feature.
+- **`request.js`**: Server-side module to handle private chat rooms with isolated functionality and full feature parity.
 
-- **`sound-commands.js`**: Server-side module to handle the `.mp3` and `scream:` commands by calling an external API.
+- **`voice.js`**: Client-side module for the walkie-talkie push-to-talk system with cached microphone permissions and sound effects.
+
+- **`walkie-sounds.js`**: Client-side module for synthetic walkie-talkie sound effects (beeps, static) with cross-platform audio context management.
+
+- **`sound-commands.js`**: Server-side module to handle the `.mp3` and `scream:` commands by calling an external API, with support for private chat rooms.
 
 - **`talk.js`**: Client-side module to handle the `speak:` command for text-to-speech with language-specific voices.
 
