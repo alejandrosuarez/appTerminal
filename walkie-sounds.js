@@ -5,17 +5,46 @@ class WalkieSounds {
         this.isInitialized = false;
         this.sounds = {};
         this.masterVolume = 0.7;
+        this.isAutoUnlocked = false;
+        
+        // Auto-initialize on any user interaction
+        this.autoInitialize();
     }
 
-    // Initialize audio context (must be called after user interaction)
+    // Auto-initialize on first user interaction
+    autoInitialize() {
+        const events = ['click', 'touchstart', 'keydown', 'focus'];
+        const initOnce = async () => {
+            if (!this.isAutoUnlocked) {
+                await this.initialize();
+                this.isAutoUnlocked = true;
+                // Remove listeners after first initialization
+                events.forEach(event => {
+                    document.removeEventListener(event, initOnce, true);
+                });
+            }
+        };
+        
+        events.forEach(event => {
+            document.addEventListener(event, initOnce, true);
+        });
+    }
+
+    // Initialize audio context (can be called multiple times safely)
     async initialize() {
         if (this.isInitialized) return;
         
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Resume context if suspended (mobile browsers)
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+            
             await this.createSounds();
             this.isInitialized = true;
-            console.log('Walkie-talkie sounds initialized');
+            console.log('Walkie-talkie sounds initialized and ready for autoplay');
         } catch (error) {
             console.error('Failed to initialize walkie sounds:', error);
         }

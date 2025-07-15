@@ -625,17 +625,27 @@
 
     let ws;
     let isInChat = false;
-    // --- ADDED: Flag to track if audio has been unlocked by the user ---
+    // --- Enhanced audio management for walkie-talkie sounds ---
     let isAudioUnlocked = false;
 
-    function unlockAudio() {
+    async function unlockAudio() {
         if (isAudioUnlocked) return;
         
-        // Set the source of our shared player to the crack sound and play it
-        soundPlayer.src = 'https://www.myinstants.com/media/sounds/bone-crack.mp3';
-        soundPlayer.play().catch(e => {}); // This action unlocks the player
-        isAudioUnlocked = true;
-        console.log('Audio context unlocked for autoplay.');
+        try {
+            // Initialize walkie sounds first
+            if (window.walkieSounds && !window.walkieSounds.isInitialized) {
+                await window.walkieSounds.initialize();
+            }
+            
+            // Set the source of our shared player to unlock it
+            soundPlayer.src = 'https://www.myinstants.com/media/sounds/bone-crack.mp3';
+            soundPlayer.play().catch(e => {}); // This action unlocks the player
+            
+            isAudioUnlocked = true;
+            console.log('Audio context unlocked for autoplay and walkie-talkie sounds ready');
+        } catch (error) {
+            console.error('Failed to unlock audio:', error);
+        }
     }
 
     function connectWebSocket() {
