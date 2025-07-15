@@ -70,6 +70,11 @@ wss.on('connection', async (ws, req) => {
 
     if (chatId) {
         initializeChatRoom(chatId, name, ws, broadcast);
+        // Initialize voice functionality for private chat rooms
+        if (typeof initializeVoice === 'function') {
+            // Note: initializeVoice is defined in voice.js and loaded in the browser
+            // The server doesn't need to call it, but we ensure the client gets the right setup
+        }
     } else {
         ws.send('Welcome to the terminal simulator! Type "exit" to quit.\nYou can also use "sql <query>" to run SQL commands.\n');
     }

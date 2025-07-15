@@ -16,6 +16,14 @@ function initialize(broadcast) {
 }
 
 /**
+ * Sets a temporary broadcast function for private chat rooms
+ * @param {function} broadcast - The temporary broadcast function.
+ */
+function setTemporaryBroadcast(broadcast) {
+    broadcastFunction = broadcast;
+}
+
+/**
  * Checks if a message is a sound command and handles it.
  * @param {string} message - The chat message from the user.
  * @param {object} client - The client's data ({ name, state }).
@@ -73,4 +81,4 @@ function handleSoundCommand(message, client, ws) {
     return false;
 }
 
-module.exports = { initialize, handleSoundCommand };
+module.exports = { initialize, handleSoundCommand, setTemporaryBroadcast };

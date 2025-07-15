@@ -1,4 +1,5 @@
 const clients = new Map();
+const soundCommands = require('./sound-commands');
 
 /**
  * Initializes a chat room for a specific chatId with the provided name.
@@ -8,6 +9,12 @@ const clients = new Map();
  * @param {function} broadcast - The broadcast function from chat.js.
  */
 function initializeChatRoom(chatId, name, ws, broadcast) {
+    // Initialize sound commands with broadcast function if not already done
+    if (!soundCommands.isInitialized) {
+        soundCommands.initialize(broadcast);
+        soundCommands.isInitialized = true;
+    }
+    
     if (!clients.has(chatId)) {
         clients.set(chatId, new Map());
     }
@@ -39,6 +46,44 @@ function handleChatRoomMessage(chatId, ws, message, broadcast) {
     const lowered = input.toLowerCase();
     console.log(`Message from ${client.name} in chatId ${chatId}: ${input}`);
 
+    // Handle sound commands first (speak, scream, direct mp3 URLs)
+    // Create a custom broadcast function for this private chat room
+    const privateChatBroadcast = (msg, sender) => {
+        const roomClients = clients.get(chatId);
+        if (roomClients) {
+            for (const [clientWs] of roomClients.entries()) {
+                if (clientWs !== sender && clientWs.readyState === 1) {
+                    clientWs.send(msg);
+                }
+            }
+        }
+    };
+    
+    // Temporarily set the broadcast function for this private chat room
+    soundCommands.setTemporaryBroadcast(privateChatBroadcast);
+    
+    const wasSoundCommand = soundCommands.handleSoundCommand(message, client, ws);
+    
+    if (wasSoundCommand) {
+        return true;
+    }
+
+    // Handle voice messages (walkie-talkie recordings)
+    if (client.state === 'active' && input.startsWith('data:audio/')) {
+        // Send the voice message back to the sender so they get a "Play" button
+        ws.send(input);
+        // Broadcast to everyone else in the private chat room
+        const roomClients = clients.get(chatId);
+        if (roomClients) {
+            for (const [clientWs] of roomClients.entries()) {
+                if (clientWs !== ws && clientWs.readyState === 1) {
+                    clientWs.send(input);
+                }
+            }
+        }
+        return true;
+    }
+
     if (client.state === 'active') {
         if (lowered === 'exit-chat') {
             broadcast(`${client.name} has left the chat room.`, ws, chatId);
@@ -48,6 +93,8 @@ function handleChatRoomMessage(chatId, ws, message, broadcast) {
             console.log(`Client ${client.name} left chatId ${chatId}. Room deleted: ${!clients.has(chatId)}`);
             return true;
         }
+        
+        // Regular chat message
         broadcast(`${client.name}: ${input}`, ws, chatId);
         return true;
     }
