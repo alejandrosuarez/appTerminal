@@ -1,10 +1,30 @@
 const clients = new Map();
+let cachedMediaStream = null;
+let isPermissionGranted = false;
 
 function initializeVoice(ws) {
     ws.isRecording = false;
     ws.audioChunks = [];
     if (!ws.mediaRecorder) {
         ws.mediaRecorder = null; // Ensure mediaRecorder is initialized
+    }
+}
+
+// Request microphone permission once and cache the stream
+async function requestMicrophonePermission() {
+    if (isPermissionGranted && cachedMediaStream) {
+        return cachedMediaStream;
+    }
+    
+    try {
+        cachedMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        isPermissionGranted = true;
+        console.log('Microphone permission granted and cached');
+        return cachedMediaStream;
+    } catch (err) {
+        console.error('Microphone access denied:', err);
+        isPermissionGranted = false;
+        throw err;
     }
 }
 
@@ -25,7 +45,7 @@ async function togglePushToTalkInternal(ws, buttonElement) {
             window.walkieSounds.playStartTalk();
         }
         
-        navigator.mediaDevices.getUserMedia({ audio: true })
+        requestMicrophonePermission()
             .then(stream => {
                 // Specify a more compatible mimeType if possible
                 const options = { mimeType: 'audio/webm' };
@@ -58,6 +78,9 @@ async function togglePushToTalkInternal(ws, buttonElement) {
                         reader.onload = function() {
                             // The reader.result will now be a valid Data URL with the correct type
                             // e.g., "data:audio/webm;base64,..."
+                            
+                            // Track this as the last sent audio for sender identification
+                            ws.lastSentAudio = reader.result;
                             ws.send(reader.result);
                         };
                         reader.readAsDataURL(audioBlob);

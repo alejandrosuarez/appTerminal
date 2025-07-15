@@ -801,7 +801,9 @@
           
           // Enhanced voice message handling with play count tracking
           if (messageText.startsWith('data:audio/')) {
-              createVoiceMessageWithPlayCount(event.data);
+              // Check if this is the sender's own message (sent back from server)
+              const isSender = ws.lastSentAudio === event.data;
+              createVoiceMessageWithPlayCount(event.data, isSender);
               return;
           }
 
@@ -911,7 +913,7 @@
     });
     
     // Create voice message with play count tracking
-    function createVoiceMessageWithPlayCount(audioData) {
+    function createVoiceMessageWithPlayCount(audioData, isSender = false) {
         audioMessageCounter++;
         const messageId = `voice-msg-${audioMessageCounter}`;
         const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -933,7 +935,7 @@
         const messageInfo = document.createElement('div');
         messageInfo.className = 'voice-message-info';
         messageInfo.innerHTML = `
-            <div class="voice-message-sender">🎙️ Voice Message</div>
+            <div class="voice-message-sender">🎙️ ${isSender ? 'Your Voice Message' : 'Voice Message'}</div>
             <div class="voice-message-time">${currentTime}</div>
         `;
         
@@ -1000,12 +1002,14 @@
         output.appendChild(messageContainer);
         output.scrollTop = output.scrollHeight;
         
-        // Auto-play the first time (with user interaction already established)
-        setTimeout(() => {
-            if (isAudioUnlocked) {
-                playButton.click();
-            }
-        }, 500);
+        // Auto-play only for recipients, not for the sender
+        if (!isSender) {
+            setTimeout(() => {
+                if (isAudioUnlocked) {
+                    playButton.click();
+                }
+            }, 500);
+        }
     }
     
     // Initialize particles and connect
