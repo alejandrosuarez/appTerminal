@@ -23,6 +23,12 @@ function initializeChatRoom(chatId, name, ws, broadcast) {
     console.log(`Client ${client.name} joined chatId ${chatId}. Total clients: ${clients.get(chatId).size}`);
     ws.send(JSON.stringify({ type: 'session_established', name: client.name, chatId }));
     ws.send(`Welcome, ${client.name}! You are now in chat room ${chatId}.`);
+    
+    // Send walkie-talkie instructions for private chat rooms
+    setTimeout(() => {
+        ws.send('Push-to-Talk: Click the red button or hold SPACEBAR to talk like a walkie-talkie!');
+    }, 1000);
+    
     broadcast(`${client.name} has joined the chat room.`, ws, chatId);
 }
 
@@ -59,12 +65,43 @@ function handleChatRoomMessage(chatId, ws, message, broadcast) {
         }
     };
     
-    // Temporarily set the broadcast function for this private chat room
-    soundCommands.setTemporaryBroadcast(privateChatBroadcast);
+    // Check for sound commands manually with private chat broadcast
+    const text = input.toString().trim();
     
-    const wasSoundCommand = soundCommands.handleSoundCommand(message, client, ws);
+    // Handle direct .mp3 URLs
+    if (text.startsWith('http') && text.endsWith('.mp3')) {
+        privateChatBroadcast(text, ws);
+        return true;
+    }
     
-    if (wasSoundCommand) {
+    // Handle "scream:" command
+    if (text.toLowerCase().startsWith('scream:')) {
+        const searchTerm = text.substring(7).trim();
+        if (searchTerm) {
+            const apiUrl = `https://myinstants-api-one.vercel.app/search?q=${encodeURIComponent(searchTerm)}`;
+            const fetch = require('node-fetch');
+            
+            fetch(apiUrl)
+                .then(res => res.json())
+                .then(json => {
+                    if (json.data && json.data.length > 0) {
+                        const soundUrl = json.data[0].mp3;
+                        if (soundUrl) {
+                            privateChatBroadcast(soundUrl, ws);
+                        }
+                    }
+                })
+                .catch(error => console.error('MyInstants API Error:', error));
+        }
+        return true;
+    }
+    
+    // Handle "speak:" command
+    if (text.toLowerCase().startsWith('speak:')) {
+        const speakText = text.substring(6).trim();
+        if (speakText) {
+            privateChatBroadcast(`speak: ${speakText}`, ws);
+        }
         return true;
     }
 
