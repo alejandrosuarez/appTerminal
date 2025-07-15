@@ -968,8 +968,29 @@
             }
             
             // Play the voice message after a short delay
-            setTimeout(() => {
-                audio.play().catch(e => console.error("Audio playback failed:", e));
+            setTimeout(async () => {
+                try {
+                    // Ensure audio context is unlocked
+                    await unlockAudio();
+                    
+                    // Additional debugging
+                    console.log('Attempting to play audio:', audioData.substring(0, 50) + '...');
+                    console.log('Audio unlocked:', isAudioUnlocked);
+                    
+                    await audio.play();
+                    console.log('Audio playback started successfully');
+                } catch (e) {
+                    console.error("Audio playback failed:", e);
+                    console.error("Audio data length:", audioData.length);
+                    console.error("Audio data type:", audioData.substring(0, 20));
+                    
+                    // Show error in UI
+                    playButton.classList.remove('playing');
+                    playButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Playback Error';
+                    setTimeout(() => {
+                        playButton.innerHTML = '<i class="fas fa-play"></i> Retry';
+                    }, 3000);
+                }
             }, 200);
             
             // Handle audio end
