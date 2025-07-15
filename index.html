@@ -28,6 +28,7 @@
   
   <script src="voice.js"></script>
   <script src="talk.js"></script>
+  <script src="walkie-sounds.js"></script>
   <script src="https://code.responsivevoice.org/responsivevoice.js?key=3FtHJch9"></script>
   
   <style>
@@ -331,6 +332,8 @@
     .btn-voice {
       background: linear-gradient(135deg, #ef4444, #dc2626);
       color: white;
+      position: relative;
+      overflow: hidden;
     }
 
     .btn-voice.active {
@@ -338,9 +341,25 @@
       animation: voicePulse 1s ease-in-out infinite;
     }
 
+    .btn-voice.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: walkieShine 2s ease-in-out infinite;
+    }
+
     @keyframes voicePulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
       50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    }
+
+    @keyframes walkieShine {
+      0% { left: -100%; }
+      100% { left: 100%; }
     }
 
     .btn-voice:hover {
@@ -350,6 +369,29 @@
 
     .btn-voice.active:hover {
       box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Recording indicator */
+    .recording-indicator {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 12px;
+      height: 12px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid var(--secondary-bg);
+      animation: recordingBlink 1s ease-in-out infinite;
+      display: none;
+    }
+
+    .btn-voice.active .recording-indicator {
+      display: block;
+    }
+
+    @keyframes recordingBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     /* Connection status styles */
@@ -546,15 +588,14 @@
         <input type="text" id="input" placeholder="Enter command..." autocomplete="off">
         <button onclick="sendMessage()" class="btn btn-primary">
           <i class="fas fa-paper-plane"></i>
-          Execute
         </button>
         <button id="pushToTalk" onclick="handlePushToTalk()" class="btn btn-voice" style="display: none;">
           <i class="fas fa-microphone"></i>
           <span class="voice-text">Talk</span>
+          <div class="recording-indicator"></div>
         </button>
         <button id="reconnectButton" class="btn btn-secondary" style="display: none;">
           <i class="fas fa-sync-alt"></i>
-          Reconnect
         </button>
       </div>
     </div>
@@ -662,6 +703,11 @@
               isInChat = true;
               pushToTalkButton.style.display = 'inline-flex';
               styledMessage = `<span class="connection-established"><i class="fas fa-user-check"></i> ${messageText}</span>`;
+              // Add walkie-talkie instructions
+              setTimeout(() => {
+                  output.innerHTML += '<div class="connection-established"><i class="fas fa-info-circle"></i> <em>Push-to-Talk: Click the red button or hold SPACEBAR to talk like a walkie-talkie!</em></div>\n';
+                  output.scrollTop = output.scrollHeight;
+              }, 1000);
           } else if (messageText.includes('You have left the chat')) {
               isInChat = false;
               pushToTalkButton.style.display = 'none';
@@ -706,10 +752,15 @@
     
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     
-    function handlePushToTalk() {
+    async function handlePushToTalk() {
+        // Initialize walkie sounds on first use
+        if (window.walkieSounds && !window.walkieSounds.isInitialized) {
+            await window.walkieSounds.initialize();
+        }
+        
         if (isInChat) {
             if (typeof togglePushToTalkInternal === 'function') {
-                togglePushToTalkInternal(ws, pushToTalkButton);
+                await togglePushToTalkInternal(ws, pushToTalkButton);
                 // Update button text and icon based on state
                 const voiceText = pushToTalkButton.querySelector('.voice-text');
                 const icon = pushToTalkButton.querySelector('i');
@@ -725,6 +776,31 @@
             output.innerHTML += '<div class="connection-lost"><i class="fas fa-exclamation-circle"></i> Please join the chat with "chat" first.</div>\n';
         }
     }
+    
+    // Keyboard shortcuts for push-to-talk
+    let isSpacePressed = false;
+    
+    document.addEventListener('keydown', (e) => {
+        // Space bar for push-to-talk (hold to talk) - but not when typing in input
+        if (e.code === 'Space' && !isSpacePressed && isInChat && document.activeElement !== input) {
+            e.preventDefault();
+            isSpacePressed = true;
+            if (!pushToTalkButton.classList.contains('active')) {
+                handlePushToTalk();
+            }
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        // Release space bar to stop talking
+        if (e.code === 'Space' && isSpacePressed && document.activeElement !== input) {
+            e.preventDefault();
+            isSpacePressed = false;
+            if (pushToTalkButton.classList.contains('active')) {
+                handlePushToTalk();
+            }
+        }
+    });
     
     // Initialize particles and connect
     initParticles();
